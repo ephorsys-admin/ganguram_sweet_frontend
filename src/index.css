@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", sans-serif;
+  --font-serif: "Playfair Display", serif;
+  
+  --color-brand-cream: #FAF6F0;
+  --color-brand-dark: #3D271B;
+  --color-brand-copper: #B0652F;
+  --color-brand-gold: #DFA250;
+  --color-brand-accent: #E6CCB2;
+}
+
+body {
+  background-color: var(--color-brand-cream);
+  color: var(--color-brand-dark);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
