@@ -77,33 +77,33 @@ const quickLinks = [
 
 const menuSections = [
   {
-    title: "Sweets Section",
+    title: "Odia & Bengali Sweets",
     items: [
-      { name: "Rasgulla", path: "/menu" },
-      { name: "Gulab Jamun", path: "/menu" },
-      { name: "Kaju Katli", path: "/menu" },
-      { name: "Sandesh", path: "/menu" },
-      { name: "Ladoo", path: "/menu" },
+      { name: "Chhena Poda", path: "/menu" },
+      { name: "Kendrapara Rasabali", path: "/menu" },
+      { name: "Saffron Rajbhog", path: "/menu" },
+      { name: "Nolen Gur Sandesh", path: "/menu" },
+      { name: "Chhena Jhili", path: "/menu" },
     ],
   },
   {
-    title: "Snacks Section",
+    title: "Dry Sweets & Laddus",
     items: [
-      { name: "Namkeen Mix", path: "/menu" },
-      { name: "Mathri", path: "/menu" },
-      { name: "Chivda", path: "/menu" },
-      { name: "Khakhra", path: "/menu" },
-      { name: "Chakli", path: "/menu" },
-    ],
-  },
-  {
-    title: "Artisanal Sweets",
-    items: [
+      { name: "Vedic Ghee Kaju Katli", path: "/menu" },
+      { name: "Motichoor Laddu", path: "/menu" },
+      { name: "Pistachio Rose Peda", path: "/menu" },
       { name: "Saffron Barfi", path: "/menu" },
-      { name: "Rose Petal Halwa", path: "/menu" },
-      { name: "Cardamom Peda", path: "/menu" },
-      { name: "Pistachio Roll", path: "/menu" },
       { name: "Dry Fruit Mithai", path: "/menu" },
+    ],
+  },
+  {
+    title: "Travel Tins & Snacks",
+    items: [
+      { name: "Sealed Rasgulla Tin", path: "/menu" },
+      { name: "Gulab Jamun Can", path: "/menu" },
+      { name: "Shahi Namkeen Mix", path: "/menu" },
+      { name: "Special Mathri", path: "/menu" },
+      { name: "Kuchnimix", path: "/menu" },
     ],
   },
 ];
@@ -139,11 +139,18 @@ const Footer = () => {
       variants={containerVariants}
       className="w-full flex flex-col font-sans mt-auto overflow-hidden"
     >
-      {/* ─── Top Banner Section (Image 2 Textured BG, Glassmorphism Cards) ─────────── */}
+      {/* ─── Top Banner Section (Royal Heritage Parchment Textured BG) ─────────── */}
       <div 
-        className="w-full bg-[url('/footer-bg.jpg')] bg-[position:center_top] bg-cover bg-no-repeat relative border-t border-brand-accent/20 py-12 md:py-16"
+        className="w-full bg-[#FAF0E6] relative border-t border-[#a65827]/20 py-12 md:py-16 overflow-hidden"
       >
-        <div className="absolute inset-0 bg-[#FAF6F0]/20 pointer-events-none" />
+        {/* Heritage Temple Architecture SVG Overlay */}
+        <svg viewBox="0 0 400 500" className="absolute right-0 bottom-0 h-full w-auto max-w-[260px] opacity-15 pointer-events-none stroke-[#a65827] fill-none" strokeWidth="1.2">
+          <circle cx="200" cy="100" r="14" strokeWidth="1.8" />
+          <ellipse cx="200" cy="125" rx="22" ry="10" strokeWidth="1.8" />
+          <ellipse cx="200" cy="145" rx="32" ry="12" strokeWidth="1.8" />
+          <path d="M 160 145 C 160 220 150 300 130 380 L 270 380 C 250 300 240 220 240 145 Z" strokeWidth="1.6" />
+          <path d="M 120 380 L 280 380 L 280 480 L 120 480 Z" strokeWidth="1.8" />
+        </svg>
 
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
           

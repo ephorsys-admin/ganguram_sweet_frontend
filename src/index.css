@@ -3,17 +3,36 @@
 @theme {
   --font-sans: "Outfit", sans-serif;
   --font-serif: "Playfair Display", serif;
+  --font-cinzel: "Cinzel", serif;
+  --font-cormorant: "Cormorant Garamond", serif;
   
   --color-brand-cream: #FAF6F0;
+  --color-brand-parchment: #FDF6ED;
   --color-brand-dark: #3D271B;
-  --color-brand-copper: #B0652F;
+  --color-brand-copper: #a65827;
   --color-brand-gold: #DFA250;
   --color-brand-accent: #E6CCB2;
 }
 
 body {
-  background-color: var(--color-brand-cream);
+  background-color: #FAF6F0;
   color: var(--color-brand-dark);
   font-family: var(--font-sans);
   overflow-x: hidden;
 }
+
+/* Royal Heritage Parchment Texture Overlay & Utilities */
+.parchment-bg {
+  background-color: #FAF0E6;
+  background-image: 
+    radial-gradient(rgba(166, 88, 39, 0.04) 1px, transparent 0),
+    linear-gradient(to right, rgba(166, 88, 39, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(166, 88, 39, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px, 48px 48px, 48px 48px;
+}
+
+.gold-border-glow {
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 10px 30px rgba(166, 88, 39, 0.08), inset 0 0 15px rgba(212, 175, 55, 0.05);
+}
+
