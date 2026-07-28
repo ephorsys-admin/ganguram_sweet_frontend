@@ -10,7 +10,7 @@ const AdminLayout = () => {
 
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-[#FAF6F0]/40">
       <SideBar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar setSidebarOpen={setSidebarOpen} />

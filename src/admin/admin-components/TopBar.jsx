@@ -7,21 +7,33 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { logOut } from "../../redux/features/auth/authSlice";
 
 const TopBar = ({ setSidebarOpen }) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const admin = useSelector((state) => state.auth.user);
+
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
-
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  const name = admin?.name || "Admin User";
+  const role = admin?.role === "super_admin" ? "Super Admin" : "Admin";
 
   // Initials
-  // const initials =
-  //   admin?.name
-  //     ?.split(" ")
-  //     .map((word) => word[0])
-  //     .join("")
-  //     .toUpperCase() || "A";
+  const initials = name
+    ?.split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase() || "A";
+
+  const handleLogout = () => {
+    dispatch(logOut());
+    navigate("/admin");
+  };
 
   // Fullscreen Toggle
   const toggleFullscreen = () => {
@@ -80,7 +92,7 @@ const TopBar = ({ setSidebarOpen }) => {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="relative z-10 bg-white border-b border-slate-200 px-6 h-15 flex items-center justify-between shrink-0"
+      className="relative z-10 bg-white border-b border-[#E6CCB2]/30 px-6 h-15 flex items-center justify-between shrink-0"
     >
       {/* Left */}
       <div className="flex items-center gap-3">
@@ -92,8 +104,8 @@ const TopBar = ({ setSidebarOpen }) => {
           <Menu size={18} />
         </motion.button>
 
-        <span className="text-[15px] font-medium tracking-widest text-slate-800">
-          name
+        <span className="text-[14px] font-semibold tracking-wider text-slate-700 font-sans">
+          GANGURAM ADMIN CONTROL PORTAL
         </span>
       </div>
 
@@ -125,17 +137,17 @@ const TopBar = ({ setSidebarOpen }) => {
             className="flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-50 transition cursor-pointer"
           >
             <div className="hidden sm:block text-right">
-              <p className="text-[13px] font-medium text-slate-800 leading-tight">
-                name
+              <p className="text-[13px] font-semibold text-slate-800 leading-tight">
+                {name}
               </p>
 
-              <p className="text-[11px] uppercase tracking-wider text-slate-400 leading-tight">
-                role
+              <p className="text-[11px] uppercase tracking-wider text-[#a65827] font-semibold leading-tight mt-0.5">
+                {role}
               </p>
             </div>
 
-            <div className="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-[13px] font-medium text-blue-700">
-              M
+            <div className="w-9 h-9 rounded-full bg-[#FAF6F0] border border-[#E6CCB2] flex items-center justify-center text-[13px] font-bold text-[#3D271B]">
+              {initials}
             </div>
           </motion.button>
 
@@ -161,21 +173,21 @@ const TopBar = ({ setSidebarOpen }) => {
                   duration: 0.2,
                   ease: "easeOut",
                 }}
-                className="absolute right-0 mt-2.5 w-52 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden z-50"
+                className="absolute right-0 mt-2.5 w-52 bg-white border border-[#E6CCB2]/30 rounded-xl shadow-lg overflow-hidden z-50"
               >
                 {/* Identity */}
-                <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-slate-100">
-                  <div className="w-9 h-9 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-[13px] font-medium text-blue-700 shrink-0">
-                    {/* {initials} */} M
+                <div className="flex items-center gap-2.5 px-3.5 py-3 border-b border-slate-100 bg-[#FAF6F0]/50">
+                  <div className="w-9 h-9 rounded-full bg-[#3D271B] text-[#FAF6F0] flex items-center justify-center text-[13px] font-bold shrink-0">
+                    {initials}
                   </div>
 
                   <div>
-                    <p className="text-[13px] font-medium text-slate-800">
-                      name
+                    <p className="text-[13px] font-bold text-slate-800">
+                      {name}
                     </p>
 
-                    <p className="text-[11px] text-slate-400 capitalize">
-                      role
+                    <p className="text-[11px] text-[#a65827] font-medium capitalize">
+                      {role}
                     </p>
                   </div>
                 </div>
@@ -198,13 +210,14 @@ const TopBar = ({ setSidebarOpen }) => {
                 </div>
 
                 {/* Logout */}
-                <div className="border-t border-slate-100 p-1.5">
+                <div className="border-t border-slate-100 p-1.5 bg-[#FAF6F0]/20">
                   <motion.button
+                    onClick={handleLogout}
                     whileHover={{
                       backgroundColor: "#fef2f2",
                     }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-red-500 transition text-left cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-red-600 transition text-left cursor-pointer font-semibold"
                   >
                     <LogOut size={15} />
                     Sign Out
