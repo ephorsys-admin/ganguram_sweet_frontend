@@ -198,7 +198,12 @@ const AdminProducts = () => {
       setModalOpen(false);
       refetch();
     } catch (err) {
-      showAlert(err?.data?.message || "Failed to save product. Please try again.", "error");
+      console.error("Save product error details:", err);
+      if (err?.data?.errors) {
+        console.error("Validation Errors List:", JSON.stringify(err.data.errors, null, 2));
+      }
+      const errMsg = err?.data?.errors?.[0]?.message || err?.data?.message || "Failed to save product. Please try again.";
+      showAlert(errMsg, "error");
     }
   };
 
