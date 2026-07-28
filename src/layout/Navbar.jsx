@@ -6,7 +6,7 @@ import { NavLink } from "react-router-dom";
 const NAV_LINKS = [
   { name: "Home", path: "/" },
   { name: "About", path: "/about" },
-  { name: "Our Sweets", path: "/our-sweets" },
+  { name: "Our Product", path: "/products" },
   { name: "Gallery", path: "/gallery" },
   { name: "Contact", path: "/contact" },
 ];
@@ -27,14 +27,10 @@ const Navbar = () => {
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         {/* Logo */}
-        <NavLink to="/" className="flex items-center gap-3">
-          {/* <img src="/logo.png" alt="Logo" className="h-12" /> */}
-
-          <span
-            className="text-2xl font-bold"
-            style={{ color: "#5C2A1A" }}
-          >
-            Mithai Ghar
+        <NavLink to="/" className="flex items-center gap-2.5">
+          <img src="/Mylogo/logo.png" alt="Ganguram Logo" className="h-12 object-contain" />
+          <span className="text-2xl font-serif font-black tracking-wider bg-gradient-to-r from-[#a65827] via-[#DFA250] to-[#5C2A1A] bg-clip-text text-transparent">
+            Maharaja
           </span>
         </NavLink>
 

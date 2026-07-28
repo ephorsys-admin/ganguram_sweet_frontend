@@ -22,9 +22,15 @@ const SweetThumb = ({ bg }) => (
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
-  const discount = Math.round(
-    ((product.mrp - product.price) / product.mrp) * 100
-  );
+  const price = product.sellingPrice || product.price || 0;
+  const mrp = product.mrp || 0;
+  const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
+  
+  const rating = product.averageRating || product.rating || 4.5;
+  const reviews = product.totalReviews || product.reviews || 120;
+  const weight = product.weight ? `${product.weight} ${product.weightUnit || ''}` : `1 ${product.unit || 'Piece'}`;
+  const imageUrl = product.images?.[0]?.url;
+  const targetId = product._id || product.slug || product.id;
 
   return (
     <motion.div
@@ -34,12 +40,16 @@ const ProductCard = ({ product }) => {
       style={{ borderColor: "#F0E4CC" }}
     >
       {/* Image area */}
-      <div className="relative aspect-square w-full">
-        <SweetThumb bg={product.bg} />
+      <div className="relative aspect-square w-full bg-[#FAF6F0]/30 flex items-center justify-center">
+        {imageUrl ? (
+          <img src={imageUrl} alt={product.name} className="h-full w-full object-cover" />
+        ) : (
+          <SweetThumb bg={product.bg || "linear-gradient(135deg,#FFE9B8,#D9962E)"} />
+        )}
 
         {discount > 0 && (
           <span
-            className="absolute left-2 top-2 rounded-md px-2 py-0.5 text-[11px] font-bold text-white"
+            className="absolute left-2 top-2 rounded-md px-2 py-0.5 text-[11px] font-bold text-white z-10"
             style={{ backgroundColor: "#8A2E2E" }}
           >
             {discount}% OFF
@@ -48,7 +58,7 @@ const ProductCard = ({ product }) => {
 
         {product.tag && (
           <span
-            className="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/90 px-2 py-0.5 text-[11px] font-bold shadow-sm"
+            className="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-white/90 px-2 py-0.5 text-[11px] font-bold shadow-sm z-10"
             style={{ color: "#B8801F" }}
           >
             {product.tag}
@@ -61,10 +71,10 @@ const ProductCard = ({ product }) => {
         <div className="flex items-center gap-1">
           <Star size={12} fill="#2E8B3D" color="#2E8B3D" />
           <span className="text-xs font-semibold" style={{ color: "#2E8B3D" }}>
-            {product.rating}
+            {rating}
           </span>
           <span className="text-xs" style={{ color: "#9A8A78" }}>
-            ({product.reviews})
+            ({reviews})
           </span>
         </div>
 
@@ -75,26 +85,26 @@ const ProductCard = ({ product }) => {
           {product.name}
         </h3>
         <p className="text-xs" style={{ color: "#9A8A78" }}>
-          {product.weight}
+          {weight}
         </p>
 
         <div className="mt-1 flex items-baseline gap-2">
           <span className="text-sm font-bold" style={{ color: "#3D1F12" }}>
-            ₹{product.price}
+            ₹{price}
           </span>
-          {product.mrp > product.price && (
+          {mrp > price && (
             <span
               className="text-xs line-through"
               style={{ color: "#B0A18E" }}
             >
-              ₹{product.mrp}
+              ₹{mrp}
             </span>
           )}
         </div>
 
         {/* Action */}
         <motion.button
-          onClick={() => navigate(`/products/${product.slug}`)}
+          onClick={() => navigate(`/products/${targetId}`)}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           className="mt-3 bg-yellow-600  text-white  cursor-pointer flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-bold"
