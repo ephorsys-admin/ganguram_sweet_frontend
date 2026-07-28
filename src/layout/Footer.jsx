@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { MapPin, Phone, Mail } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const FacebookIcon = (props) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -22,6 +23,13 @@ const TwitterIcon = (props) => (
 );
 
 const QUICK_LINKS = ["Home", "About", "Our Sweets", "Gallery", "Contact"];
+const LINK_MAP = {
+  "Home": "/",
+  "About": "/about",
+  "Our Sweets": "/our-sweets",
+  "Gallery": "/gallery",
+  "Contact": "/contact",
+};
 const SWEET_LINKS = ["Ladoo", "Barfi", "Gulab Jamun", "Kaju Katli", "Rasgulla"];
 
 const SOCIALS = [
@@ -85,13 +93,13 @@ const Footer = () => {
             <ul className="mt-4 space-y-2">
               {QUICK_LINKS.map((link) => (
                 <li key={link}>
-                  <a
-                    href="#"
+                  <Link
+                    to={LINK_MAP[link] || "/"}
                     className="text-sm font-medium transition-colors hover:opacity-70"
                     style={{ color: "#7A5C4A" }}
                   >
                     {link}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -156,8 +164,8 @@ const Footer = () => {
         >
           <p>&copy; {new Date().getFullYear()} Mithai Ghar. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <a href="#" className="hover:opacity-70">Privacy Policy</a>
-            <a href="#" className="hover:opacity-70">Terms of Service</a>
+            <Link to="/privacy-policy" className="hover:opacity-70">Privacy Policy</Link>
+            <Link to="/terms-of-service" className="hover:opacity-70">Terms of Service</Link>
           </div>
         </div>
       </div>

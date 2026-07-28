@@ -1,5 +1,5 @@
-import { BrowserRouter, Routes } from "react-router-dom";
-import { Suspense } from "react";
+import { BrowserRouter, Routes, useLocation } from "react-router-dom";
+import { Suspense, useEffect } from "react";
 import AdminRoutes from "./admin.routes";
 import PublicRoutes from "./public.routes";
 
@@ -10,9 +10,21 @@ const AppLoading = () => (
   </div>
 );
 
+// Helper component to restore window scroll to top of page on every route switch
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
 const AppRoutes = () => {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Suspense fallback={<AppLoading />}>
         <Routes>
           {PublicRoutes}
