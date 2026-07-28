@@ -1,42 +1,42 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { 
   Plus, 
   ChefHat, 
   Search, 
-  Filter
+  Filter,
+  Loader2,
+  AlertTriangle,
+  CheckCircle
 } from "lucide-react";
-import { useGetCategoriesQuery } from "../../redux/services/adminApi";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  useGetCategoriesQuery, 
+  useGetProductsQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation,
+  useAddProductImageMutation,
+  useDeleteProductImageMutation
+} from "../../redux/services/adminApi";
 import ProductTable from "../admin-components/ProductTable";
-import ProductModal from "../admin-components/ProductModal";
-
-const SWEET_IMAGES = [
-  "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?q=80&w=300&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1601050690597-df0568f70950?q=80&w=300&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=300&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?q=80&w=300&auto=format&fit=crop"
-];
+import ProductModal from "../admin-components/modals/ProductModal";
+import DeleteConfirmationModal from "../admin-components/modals/DeleteConfirmationModal";
 
 const AdminProducts = () => {
   // Fetch real categories list to bind to dropdown
   const { data: categoriesResponse } = useGetCategoriesQuery();
   const categories = categoriesResponse?.data || [];
 
-  // Load products from localStorage
-  const [products, setProducts] = useState(() => {
-    const data = localStorage.getItem("ganguram_products");
-    return data ? JSON.parse(data) : [
-      { id: 1, name: "Authentic Chhena Poda", categoryId: "Traditional Odia Sweets", mrp: 480, sellingPrice: 450, stock: 15, unit: "Kg", status: true, image: SWEET_IMAGES[0], isFeatured: true, isBestSeller: true },
-      { id: 2, name: "Royal Kendrapara Rasabali", categoryId: "Traditional Odia Sweets", mrp: 520, sellingPrice: 490, stock: 10, unit: "Kg", status: true, image: SWEET_IMAGES[1], isFeatured: false, isBestSeller: true },
-      { id: 3, name: "Pahala Style Chhena Jhili", categoryId: "Traditional Odia Sweets", mrp: 460, sellingPrice: 420, stock: 20, unit: "Piece", status: true, image: SWEET_IMAGES[2], isFeatured: true, isBestSeller: false },
-      { id: 4, name: "Classic Saffron Rajbhog", categoryId: "Signature Bengali Sweets", mrp: 450, sellingPrice: 400, stock: 8, unit: "Box", status: true, image: SWEET_IMAGES[1], isFeatured: false, isBestSeller: false },
-      { id: 5, name: "Kaju Katli", categoryId: "Dry Sweets & Laddus", mrp: 900, sellingPrice: 850, stock: 25, unit: "Kg", status: true, image: SWEET_IMAGES[3], isFeatured: true, isBestSeller: true }
-    ];
-  });
+  // Fetch real products list
+  const { data: productsResponse, isLoading, isError, refetch } = useGetProductsQuery();
+  const products = productsResponse?.data || [];
 
-  // Save changes to localStorage
-  useEffect(() => {
-    localStorage.setItem("ganguram_products", JSON.stringify(products));
-  }, [products]);
+  // API mutations
+  const [createProduct] = useCreateProductMutation();
+  const [updateProduct] = useUpdateProductMutation();
+  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+  const [addProductImage] = useAddProductImageMutation();
+  const [deleteProductImage] = useDeleteProductImageMutation();
 
   // Search & Filter state
   const [search, setSearch] = useState("");
@@ -46,6 +46,18 @@ const AdminProducts = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState("add"); // "add" | "edit"
   const [currentProduct, setCurrentProduct] = useState(null);
+
+  // Delete Confirmation State
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [productIdToDelete, setProductIdToDelete] = useState(null);
+
+  // Feedback Messages
+  const [alert, setAlert] = useState({ show: false, message: "", type: "success" });
+
+  const showAlert = (message, type = "success") => {
+    setAlert({ show: true, message, type });
+    setTimeout(() => setAlert({ show: false, message: "", type: "success" }), 3000);
+  };
 
   const handleOpenAddModal = () => {
     setModalType("add");
@@ -59,42 +71,141 @@ const AdminProducts = () => {
     setModalOpen(true);
   };
 
-  const handleToggleStatus = (id) => {
-    setProducts(products.map(p => p.id === id ? { ...p, status: !p.status } : p));
-  };
-
-  const handleDeleteProduct = (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter(p => p.id !== id));
+  const handleToggleStatus = async (prod) => {
+    try {
+      await updateProduct({ 
+        productId: prod._id, 
+        body: { status: !prod.status } 
+      }).unwrap();
+      showAlert(`Product marked as ${!prod.status ? 'Active' : 'Inactive'}`);
+      refetch();
+    } catch (err) {
+      showAlert(err?.data?.message || "Failed to update status", "error");
     }
   };
 
-  const handleModalSubmit = (formData) => {
-    if (modalType === "add") {
-      const newProduct = {
-        id: Date.now(),
-        ...formData,
-        mrp: parseFloat(formData.mrp) || 0,
-        sellingPrice: parseFloat(formData.sellingPrice) || 0,
-        stock: parseInt(formData.stock) || 0,
-      };
-      setProducts([...products, newProduct]);
-    } else {
-      setProducts(products.map(p => p.id === currentProduct.id ? {
-        ...p,
-        ...formData,
-        mrp: parseFloat(formData.mrp) || 0,
-        sellingPrice: parseFloat(formData.sellingPrice) || 0,
-        stock: parseInt(formData.stock) || 0,
-      } : p));
+  const handleOpenDeleteModal = (productId) => {
+    setProductIdToDelete(productId);
+    setDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!productIdToDelete) return;
+    try {
+      await deleteProduct(productIdToDelete).unwrap();
+      showAlert("Product deleted successfully!");
+      setDeleteOpen(false);
+      setProductIdToDelete(null);
+      refetch();
+    } catch (err) {
+      showAlert(err?.data?.message || "Failed to delete product.", "error");
     }
-    setModalOpen(false);
+  };
+
+  const handleModalSubmit = async ({
+    name,
+    categoryId,
+    mrp,
+    sellingPrice,
+    stock,
+    unit,
+    status,
+    imageFile,
+    description,
+    isFeatured,
+    isBestSeller,
+    isTrending,
+    isNewArrival
+  }) => {
+    if (!name.trim()) {
+      showAlert("Product name is required", "error");
+      return;
+    }
+    if (!categoryId) {
+      showAlert("Product category is required", "error");
+      return;
+    }
+    if (Number(sellingPrice) > Number(mrp)) {
+      showAlert("Selling price cannot be greater than MRP.", "error");
+      return;
+    }
+
+    try {
+      if (modalType === "add") {
+        if (!imageFile) {
+          showAlert("Product image file is required.", "error");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("name", name.trim());
+        formData.append("category", categoryId);
+        formData.append("mrp", mrp);
+        formData.append("sellingPrice", sellingPrice);
+        formData.append("stock", stock);
+        formData.append("unit", unit);
+        formData.append("shortDescription", description.trim());
+        formData.append("description", description.trim());
+        formData.append("status", status);
+        formData.append("isFeatured", isFeatured);
+        formData.append("isBestSeller", isBestSeller);
+        formData.append("isTrending", isTrending);
+        formData.append("isNewArrival", isNewArrival);
+        
+        formData.append("images", imageFile); // backend expects upload.array("images", 5) with 'images' key
+
+        await createProduct(formData).unwrap();
+        showAlert("Product created successfully!");
+      } else {
+        // Edit Mode
+        const body = {
+          name: name.trim(),
+          category: categoryId,
+          mrp,
+          sellingPrice,
+          stock,
+          unit,
+          shortDescription: description.trim(),
+          description: description.trim(),
+          status,
+          isFeatured,
+          isBestSeller,
+          isTrending,
+          isNewArrival
+        };
+
+        await updateProduct({ productId: currentProduct._id, body }).unwrap();
+
+        if (imageFile) {
+          // Replaces image by deleting existing ones and uploading new one
+          if (currentProduct.images && currentProduct.images.length > 0) {
+            for (const img of currentProduct.images) {
+              try {
+                await deleteProductImage({ productId: currentProduct._id, publicId: img.publicId }).unwrap();
+              } catch (e) {
+                console.error("Failed to delete image: ", img.publicId, e);
+              }
+            }
+          }
+
+          const imgFormData = new FormData();
+          imgFormData.append("images", imageFile);
+          await addProductImage({ productId: currentProduct._id, formData: imgFormData }).unwrap();
+        }
+
+        showAlert("Product updated successfully!");
+      }
+      setModalOpen(false);
+      refetch();
+    } catch (err) {
+      showAlert(err?.data?.message || "Failed to save product. Please try again.", "error");
+    }
   };
 
   // Filtered lists
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = categoryFilter === "All" || p.categoryId === categoryFilter;
+    const matchesCategory = categoryFilter === "All" || p.category?.name === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
@@ -116,6 +227,24 @@ const AdminProducts = () => {
           <Plus size={16} /> Add Sweet Product
         </button>
       </div>
+
+      {/* Alert System */}
+      <AnimatePresence>
+        {alert.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 border shadow-md
+              ${alert.type === "success" 
+                ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
+                : "bg-red-50 text-red-800 border-red-200"}`}
+          >
+            {alert.type === "success" ? <CheckCircle size={16} className="text-emerald-600" /> : <AlertTriangle size={16} className="text-red-600" />}
+            {alert.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Filters & Search */}
       <div className="bg-white p-4 rounded-2xl border border-[#E6CCB2]/30 shadow-xs flex flex-col md:flex-row gap-4 items-center">
@@ -143,19 +272,26 @@ const AdminProducts = () => {
             {categories.map(c => (
               <option key={c._id} value={c.name}>{c.name}</option>
             ))}
-            {categories.length === 0 && (
-              <>
-                <option value="Traditional Odia Sweets">Traditional Odia Sweets</option>
-                <option value="Signature Bengali Sweets">Signature Bengali Sweets</option>
-                <option value="Dry Sweets & Laddus">Dry Sweets & Laddus</option>
-              </>
-            )}
           </select>
         </div>
       </div>
 
-      {/* Grid table */}
-      {filteredProducts.length === 0 ? (
+      {/* Content View */}
+      {isLoading ? (
+        <div className="bg-white p-12 rounded-3xl border border-[#E6CCB2]/30 shadow-xs flex flex-col items-center justify-center space-y-3">
+          <Loader2 className="h-10 w-10 text-[#DFA250] animate-spin" />
+          <span className="text-xs text-[#6E5A4F] font-semibold">Loading Sweet Products...</span>
+        </div>
+      ) : isError ? (
+        <div className="bg-red-50/50 p-8 rounded-3xl border border-red-200 flex flex-col items-center justify-center text-center space-y-2">
+          <AlertTriangle className="h-10 w-10 text-red-600" />
+          <span className="text-sm font-bold text-red-800">Connection Failed</span>
+          <p className="text-xs text-red-600/80">Make sure your backend server is running and try again.</p>
+          <button onClick={refetch} className="mt-2 px-4 py-2 bg-red-600 text-white font-semibold text-xs rounded-lg shadow-md hover:bg-red-700 transition">
+            Retry Connection
+          </button>
+        </div>
+      ) : filteredProducts.length === 0 ? (
         <div className="bg-white p-12 rounded-3xl border border-[#E6CCB2]/30 text-center space-y-4 shadow-xs">
           <div className="mx-auto w-16 h-16 rounded-full bg-[#FAF6F0] flex items-center justify-center text-[#DFA250] border border-[#E6CCB2]/20">
             <ChefHat size={28} />
@@ -169,7 +305,7 @@ const AdminProducts = () => {
         <ProductTable 
           products={filteredProducts}
           onEditClick={handleOpenEditModal}
-          onDeleteClick={handleDeleteProduct}
+          onDeleteClick={handleOpenDeleteModal}
           onToggleStatus={handleToggleStatus}
         />
       )}
@@ -182,6 +318,16 @@ const AdminProducts = () => {
         categories={categories}
         onClose={() => setModalOpen(false)}
         onSubmit={handleModalSubmit}
+      />
+
+      {/* Custom delete confirmation modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteOpen}
+        isLoading={isDeleting}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Sweet Product"
+        message="Are you sure you want to delete this sweet product? This will remove it from the menu catalog."
       />
     </div>
   );

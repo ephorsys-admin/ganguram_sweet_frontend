@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logOut } from "../../redux/features/auth/authSlice";
+import LogoutConfirmationModal from "./modals/LogoutConfirmationModal";
 
 const TopBar = ({ setSidebarOpen }) => {
   const dispatch = useDispatch();
@@ -19,6 +20,7 @@ const TopBar = ({ setSidebarOpen }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   const name = admin?.name || "Admin User";
   const role = admin?.role === "super_admin" ? "Super Admin" : "Admin";
@@ -30,9 +32,15 @@ const TopBar = ({ setSidebarOpen }) => {
     .join("")
     .toUpperCase() || "A";
 
+  const triggerLogout = () => {
+    setIsLogoutModalOpen(true);
+    setProfileOpen(false);
+  };
+
   const handleLogout = () => {
     dispatch(logOut());
     navigate("/admin");
+    setIsLogoutModalOpen(false);
   };
 
   // Fullscreen Toggle
@@ -212,7 +220,7 @@ const TopBar = ({ setSidebarOpen }) => {
                 {/* Logout */}
                 <div className="border-t border-slate-100 p-1.5 bg-[#FAF6F0]/20">
                   <motion.button
-                    onClick={handleLogout}
+                    onClick={triggerLogout}
                     whileHover={{
                       backgroundColor: "#fef2f2",
                     }}
@@ -228,6 +236,12 @@ const TopBar = ({ setSidebarOpen }) => {
           </AnimatePresence>
         </div>
       </div>
+
+      <LogoutConfirmationModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={handleLogout}
+      />
     </motion.header>
   );
 };
