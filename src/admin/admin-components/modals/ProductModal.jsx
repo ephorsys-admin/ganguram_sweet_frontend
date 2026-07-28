@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
-import { X, ToggleRight, ToggleLeft } from "lucide-react";
+import { X, Upload, Layers, ToggleRight, ToggleLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const SWEET_IMAGES = [
-  "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?q=80&w=300&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1601050690597-df0568f70950?q=80&w=300&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=300&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?q=80&w=300&auto=format&fit=crop"
-];
 
 const ProductModal = ({ isOpen, type, product, categories, onClose, onSubmit }) => {
   const [name, setName] = useState("");
@@ -17,7 +10,8 @@ const ProductModal = ({ isOpen, type, product, categories, onClose, onSubmit }) 
   const [stock, setStock] = useState(0);
   const [unit, setUnit] = useState("Kg");
   const [status, setStatus] = useState(true);
-  const [image, setImage] = useState(SWEET_IMAGES[0]);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [description, setDescription] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
@@ -28,27 +22,29 @@ const ProductModal = ({ isOpen, type, product, categories, onClose, onSubmit }) 
     if (isOpen) {
       if (type === "edit" && product) {
         setName(product.name || "");
-        setCategoryId(product.categoryId || "");
+        setCategoryId(product.category?._id || product.category || "");
         setMrp(product.mrp || 0);
         setSellingPrice(product.sellingPrice || 0);
         setStock(product.stock || 0);
         setUnit(product.unit || "Kg");
         setStatus(product.status ?? true);
-        setImage(product.image || SWEET_IMAGES[0]);
-        setDescription(product.description || "");
+        setImageFile(null);
+        setImagePreview(product.images?.[0]?.url || "");
+        setDescription(product.description || product.shortDescription || "");
         setIsFeatured(product.isFeatured || false);
         setIsBestSeller(product.isBestSeller || false);
         setIsTrending(product.isTrending || false);
         setIsNewArrival(product.isNewArrival || false);
       } else {
         setName("");
-        setCategoryId(categories[0]?.name || "Traditional Odia Sweets");
+        setCategoryId(categories[0]?._id || "");
         setMrp(0);
         setSellingPrice(0);
         setStock(0);
         setUnit("Kg");
         setStatus(true);
-        setImage(SWEET_IMAGES[Math.floor(Math.random() * SWEET_IMAGES.length)]);
+        setImageFile(null);
+        setImagePreview("");
         setDescription("");
         setIsFeatured(false);
         setIsBestSeller(false);
@@ -57,6 +53,14 @@ const ProductModal = ({ isOpen, type, product, categories, onClose, onSubmit }) 
       }
     }
   }, [isOpen, type, product, categories]);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
@@ -68,7 +72,7 @@ const ProductModal = ({ isOpen, type, product, categories, onClose, onSubmit }) 
       stock,
       unit,
       status,
-      image,
+      imageFile,
       description,
       isFeatured,
       isBestSeller,
@@ -108,20 +112,23 @@ const ProductModal = ({ isOpen, type, product, categories, onClose, onSubmit }) 
             </div>
 
             <form onSubmit={handleFormSubmit} className="space-y-4">
-              {/* Thumbnail Preview */}
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-xl overflow-hidden bg-[#FAF6F0] border border-[#E6CCB2]/30 shrink-0">
-                  <img src={image} alt="Preview" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-[#6E5A4F]">Thumbnail Image Link</label>
-                  <input
-                    type="text"
-                    value={image}
-                    onChange={(e) => setImage(e.target.value)}
-                    placeholder="Paste Unsplash image URL..."
-                    className="block w-full px-3 py-2 bg-[#FAF6F0]/40 border border-[#E6CCB2]/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#a65827]"
-                  />
+              {/* Image Upload Box */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[#6E5A4F]">Product Banner Image</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-2xl bg-[#FAF6F0] border-2 border-dashed border-[#E6CCB2] flex items-center justify-center overflow-hidden shrink-0">
+                    {imagePreview ? (
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Layers className="text-[#E6CCB2]/70 h-6 w-6" />
+                    )}
+                  </div>
+                  
+                  <label className="flex-1 flex flex-col items-center justify-center px-4 py-3 bg-[#FAF6F0]/80 hover:bg-[#FAF6F0] border border-[#E6CCB2]/30 rounded-xl cursor-pointer text-center text-xs text-[#6E5A4F] font-semibold transition">
+                    <Upload size={16} className="text-[#a65827] mb-1" />
+                    <span>{imageFile ? "Change Image" : "Upload Image"}</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                  </label>
                 </div>
               </div>
 
@@ -139,7 +146,7 @@ const ProductModal = ({ isOpen, type, product, categories, onClose, onSubmit }) 
               </div>
 
               {/* Category & Unit */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-[#6E5A4F]">Category</label>
                   <select
@@ -148,15 +155,8 @@ const ProductModal = ({ isOpen, type, product, categories, onClose, onSubmit }) 
                     className="block w-full px-3 py-2.5 bg-[#FAF6F0]/40 border border-[#E6CCB2]/40 rounded-xl focus:outline-none"
                   >
                     {categories.map(c => (
-                      <option key={c._id} value={c.name}>{c.name}</option>
+                      <option key={c._id} value={c._id}>{c.name}</option>
                     ))}
-                    {categories.length === 0 && (
-                      <>
-                        <option value="Traditional Odia Sweets">Traditional Odia Sweets</option>
-                        <option value="Signature Bengali Sweets">Signature Bengali Sweets</option>
-                        <option value="Dry Sweets & Laddus">Dry Sweets & Laddus</option>
-                      </>
-                    )}
                   </select>
                 </div>
 
@@ -177,7 +177,7 @@ const ProductModal = ({ isOpen, type, product, categories, onClose, onSubmit }) 
               </div>
 
               {/* MRP & Sell Price & Stock */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-[#6E5A4F]">MRP (₹)</label>
                   <input
@@ -230,7 +230,7 @@ const ProductModal = ({ isOpen, type, product, categories, onClose, onSubmit }) 
               <div className="bg-[#FAF6F0]/50 p-4 rounded-2xl border border-[#E6CCB2]/20 space-y-3">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-[#6E5A4F] block">Homepage Promotions & Settings</label>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="rounded text-[#a65827] focus:ring-[#a65827]" />
                     <span className="font-semibold text-slate-700">Featured Sweet</span>
