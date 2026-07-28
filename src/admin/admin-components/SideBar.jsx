@@ -1,12 +1,25 @@
-import { LayoutDashboard, LogOut, X } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { LayoutDashboard, Layers, ChefHat, ClipboardList, MessageSquare, LogOut, X } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useDispatch } from "react-redux";
+import { logOut } from "../../redux/features/auth/authSlice";
 
 const NAV_ITEMS = [
   { path: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/admin/categories", label: "Categories", icon: Layers },
+  { path: "/admin/products", label: "Products", icon: ChefHat },
+  { path: "/admin/orders", label: "Orders", icon: ClipboardList },
+  { path: "/admin/inquiries", label: "Inquiries", icon: MessageSquare },
 ];
 
 const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch(logOut());
+    navigate("/admin");
+  };
 
   return (
     <>
@@ -28,7 +41,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
       {/* Sidebar */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-[#0a0e1a] text-white flex flex-col transition-transform duration-300 border-r border-slate-800/60
+          fixed inset-y-0 left-0 z-50 w-64 bg-[#2A1A12] text-[#FAF6F0] flex flex-col transition-transform duration-300 border-r border-[#FAF6F0]/10
           lg:relative lg:translate-x-0 lg:shrink-0
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
@@ -38,10 +51,10 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="flex items-center justify-between px-6 py-4 bg-[#070b15]/60 border-b border-slate-800/60"
+          className="flex items-center justify-between px-5 py-4 bg-[#1E110A] border-b border-[#FAF6F0]/10"
         >
           <div className="flex items-center gap-3">
-            <div className="w-16 h-16 bg-white p-0.5 rounded-xl flex items-center justify-center overflow-hidden shadow-inner border border-slate-700/10 transition-all duration-300 hover:scale-105">
+            <div className="w-11 h-11 bg-white p-0.5 rounded-xl flex items-center justify-center overflow-hidden shadow-inner border border-white/10 transition-all duration-300 hover:scale-105">
               <img
                 src="/Mylogo/logo.png"
                 alt="Logo"
@@ -50,15 +63,15 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
               />
             </div>
             <div>
-              <p className="text-[17px] font-black tracking-wider leading-none bg-linear-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                YESODA
+              <p className="text-[16px] font-serif font-black tracking-wider leading-none text-[#DFA250]">
+                GANGURAM
               </p>
-              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1 block">Health Care</span>
+              <span className="text-[9px] text-[#E6CCB2]/75 font-bold uppercase tracking-widest mt-1 block">Sweet Heritage</span>
             </div>
           </div>
 
           <button
-            className="lg:hidden p-1.5 hover:bg-white/10 rounded-lg transition text-slate-400"
+            className="lg:hidden p-1.5 hover:bg-white/10 rounded-lg transition text-[#E6CCB2]"
             onClick={() => setSidebarOpen(false)}
           >
             <X size={18} />
@@ -80,8 +93,8 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
                 className={({ isActive }) =>
                   `w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200
                   ${isActive
-                    ? "bg-linear-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/20 font-bold scale-[1.02]"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 hover:scale-[1.02]"
+                    ? "bg-[#DFA250] text-[#3D271B] shadow-lg shadow-[#DFA250]/15 font-bold scale-[1.02]"
+                    : "text-[#E6CCB2]/80 hover:text-[#FAF6F0] hover:bg-white/5 hover:scale-[1.02]"
                   }`
                 }
               >
@@ -100,9 +113,10 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
           className="px-4 pb-6"
         >
           <motion.button
-            whileHover={{ scale: 1.02, backgroundColor: "rgba(220, 38, 38, 0.15)" }}
+            onClick={handleLogout}
+            whileHover={{ scale: 1.02, backgroundColor: "rgba(223, 162, 80, 0.12)" }}
             whileTap={{ scale: 0.98 }}
-            className="w-full flex cursor-pointer items-center gap-3 px-4 py-2.5 bg-red-950/20 hover:bg-red-900/30 border border-red-900/40 rounded-xl text-sm font-semibold text-red-200 transition-all duration-200"
+            className="w-full flex cursor-pointer items-center gap-3 px-4 py-2.5 bg-[#a65827]/10 hover:bg-[#a65827]/20 border border-[#a65827]/20 rounded-xl text-sm font-semibold text-[#FAF6F0] transition-all duration-200"
           >
             <LogOut size={18} />
             Logout
