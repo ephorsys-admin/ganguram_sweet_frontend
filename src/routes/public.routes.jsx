@@ -1,29 +1,19 @@
 import { lazy } from "react";
 import { Route } from "react-router-dom";
 import MainLayout from "../layout/MainLayout";
-import SweetPage from "../web/webPages/Sweetpage";
-import AboutPage from "../web/webPages/Aboutpage";
-import { Contact } from "lucide-react";
-import ContactPage from "../web/webPages/Contatpage";
-import GalleryPage from "../web/webPages/Gallerypage";
+import ProductDetails from "../web/web-components/Productdetails";
+import CategoryListing from "../web/web-components/Categorylisting";
+import AboutUs from "../web/webPages/AboutUs";
+// import { Contact } from "lucide-react";
 
 const HomePage = lazy(() => import("../web/webPages/HomePage"));
-const NotFoundPage = lazy(() => import("../web/webPages/NotFoundPage"));
 
 const PublicRoutes = (
   <Route path="/" element={<MainLayout />}>
     <Route index element={<HomePage />} />
-    <Route path="menu" element={<SweetPage />} />
-    <Route path="sweet" element={<SweetPage />} />
-    <Route path ="about" element={<AboutPage />} />
-    <Route path = "contact" element={<ContactPage/>}/>
-    <Route path = "gallery" element={<GalleryPage/>}/>
-    <Route path="*" element={<NotFoundPage />} />
-    
-
-   
-
-
+    <Route path="/products/:slug" element={<ProductDetails />} />
+    <Route path="/category/:categoryId" element={<CategoryListing />} />
+    <Route path="/about" element={<AboutUs />} />
   </Route>
 );
 
