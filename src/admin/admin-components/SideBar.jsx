@@ -1,6 +1,8 @@
 import { LayoutDashboard, Layers, ChefHat, ClipboardList, MessageSquare, LogOut, X } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import LogoutConfirmationModal from "./modals/LogoutConfirmationModal";
 import { useDispatch } from "react-redux";
 import { logOut } from "../../redux/features/auth/authSlice";
 
@@ -15,10 +17,17 @@ const NAV_ITEMS = [
 const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const triggerLogout = () => {
+    setIsLogoutModalOpen(true);
+    setSidebarOpen(false); // Close sidebar on mobile
+  };
 
   const handleLogout = () => {
     dispatch(logOut());
     navigate("/admin");
+    setIsLogoutModalOpen(false);
   };
 
   return (
@@ -113,7 +122,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
           className="px-4 pb-6"
         >
           <motion.button
-            onClick={handleLogout}
+            onClick={triggerLogout}
             whileHover={{ scale: 1.02, backgroundColor: "rgba(223, 162, 80, 0.12)" }}
             whileTap={{ scale: 0.98 }}
             className="w-full flex cursor-pointer items-center gap-3 px-4 py-2.5 bg-[#a65827]/10 hover:bg-[#a65827]/20 border border-[#a65827]/20 rounded-xl text-sm font-semibold text-[#FAF6F0] transition-all duration-200"
@@ -123,6 +132,12 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
           </motion.button>
         </motion.div>
       </aside>
+
+      <LogoutConfirmationModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={handleLogout}
+      />
     </>
   );
 };

@@ -19,10 +19,14 @@ const ProductTable = ({ products, onEditClick, onDeleteClick, onToggleStatus }) 
           </thead>
           <tbody className="divide-y divide-[#FAF6F0] text-[#3D271B]">
             {products.map((p) => (
-              <tr key={p.id} className="hover:bg-[#FAF6F0]/15 transition">
+              <tr key={p._id} className="hover:bg-[#FAF6F0]/15 transition">
                 <td className="px-6 py-4">
-                  <div className="w-12 h-12 rounded-xl bg-amber-50 border border-slate-100 overflow-hidden shrink-0">
-                    <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 border border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                    {p.images?.[0]?.url ? (
+                      <img src={p.images[0].url} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] font-bold text-[#E6CCB2] uppercase">No Img</span>
+                    )}
                   </div>
                 </td>
                 <td className="px-6 py-4">
@@ -31,7 +35,7 @@ const ProductTable = ({ products, onEditClick, onDeleteClick, onToggleStatus }) 
                 </td>
                 <td className="px-6 py-4">
                   <span className="inline-flex px-2 py-0.5 bg-[#FAF6F0] border border-[#E6CCB2]/30 rounded-md text-[10px] text-[#6E5A4F] font-bold">
-                    {p.categoryId}
+                    {p.category?.name || "Uncategorized"}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-center font-semibold">
@@ -72,7 +76,7 @@ const ProductTable = ({ products, onEditClick, onDeleteClick, onToggleStatus }) 
                   </div>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <button onClick={() => onToggleStatus(p.id)} className="focus:outline-none hover:scale-105 transition cursor-pointer">
+                  <button onClick={() => onToggleStatus(p)} className="focus:outline-none hover:scale-105 transition cursor-pointer">
                     {p.status ? (
                       <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full font-bold text-[10px]">Active</span>
                     ) : (
@@ -90,7 +94,7 @@ const ProductTable = ({ products, onEditClick, onDeleteClick, onToggleStatus }) 
                       <Edit size={14} />
                     </button>
                     <button
-                      onClick={() => onDeleteClick(p.id)}
+                      onClick={() => onDeleteClick(p._id)}
                       className="p-1.5 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-lg transition cursor-pointer"
                       title="Delete Product"
                     >

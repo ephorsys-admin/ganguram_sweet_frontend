@@ -44,7 +44,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: baseQueryWithReauth,
-  tagTypes: ["AdminProfile", "Category"],
+  tagTypes: ["AdminProfile", "Category", "Product"],
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (credentials) => ({
@@ -105,6 +105,49 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["Category"],
     }),
+    getProducts: builder.query({
+      query: () => "/product/admin",
+      providesTags: ["Product"],
+    }),
+    createProduct: builder.mutation({
+      query: (formData) => ({
+        url: "/product/create",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Product"],
+    }),
+    updateProduct: builder.mutation({
+      query: ({ productId, body }) => ({
+        url: `/product/update/${productId}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Product"],
+    }),
+    deleteProduct: builder.mutation({
+      query: (productId) => ({
+        url: `/product/delete/${productId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Product"],
+    }),
+    addProductImage: builder.mutation({
+      query: ({ productId, formData }) => ({
+        url: `/product/${productId}/images`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Product"],
+    }),
+    deleteProductImage: builder.mutation({
+      query: ({ productId, publicId }) => ({
+        url: `/product/${productId}/images`,
+        method: "DELETE",
+        body: { publicId },
+      }),
+      invalidatesTags: ["Product"],
+    }),
   }),
 });
 
@@ -118,4 +161,10 @@ export const {
   useGetCategoriesQuery,
   useCreateCategoryMutation,
   useUpdateCategoryMutation,
+  useGetProductsQuery,
+  useCreateProductMutation,
+  useUpdateProductMutation,
+  useDeleteProductMutation,
+  useAddProductImageMutation,
+  useDeleteProductImageMutation,
 } = adminApi;

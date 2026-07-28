@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ClipboardList, Search, Filter } from "lucide-react";
 import OrderTable from "../admin-components/OrderTable";
-import OrderDetailModal from "../admin-components/OrderDetailModal";
+import OrderDetailModal from "../admin-components/modals/OrderDetailModal";
 
 const AdminOrders = () => {
   // Load orders from localStorage

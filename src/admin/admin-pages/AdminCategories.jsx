@@ -10,10 +10,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   useGetCategoriesQuery, 
   useCreateCategoryMutation, 
-  useUpdateCategoryMutation 
+  useUpdateCategoryMutation
 } from "../../redux/services/adminApi";
 import CategoryTable from "../admin-components/CategoryTable";
-import CategoryModal from "../admin-components/CategoryModal";
+import CategoryModal from "../admin-components/modals/CategoryModal";
 
 const AdminCategories = () => {
   const { data: response, isLoading, isError, refetch } = useGetCategoriesQuery();
