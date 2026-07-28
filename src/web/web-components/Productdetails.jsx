@@ -9,7 +9,9 @@ import {
   Truck,
   ShieldCheck,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
+import { useGetProductDetailsPublicQuery } from "../../redux/services/adminApi";
 
 /**
  * STATIC / DUMMY DATA — shaped exactly like the API response you shared.
@@ -73,11 +75,11 @@ const BADGES = [
 ];
 
 const ProductDetails = () => {
-  const { slug } = useParams();
+  const { productId } = useParams();
   const navigate = useNavigate();
 
-  // Static for now — `slug` from the URL will later select the right product.
-  const product = STATIC_PRODUCT;
+  const { data: response, isLoading, isError } = useGetProductDetailsPublicQuery(productId);
+  const product = response?.data;
 
   const [activeImage, setActiveImage] = useState(0);
   const [qty, setQty] = useState(1);
@@ -90,6 +92,31 @@ const ProductDetails = () => {
     notes: "",
   });
   const [errors, setErrors] = useState({});
+
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-[50vh] flex items-center justify-center" style={{ backgroundColor: "#FFFDF8" }}>
+        <Loader2 className="h-8 w-8 text-[#DFA250] animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError || !product) {
+    return (
+      <div className="w-full min-h-[50vh] flex flex-col items-center justify-center gap-4" style={{ backgroundColor: "#FFFDF8" }}>
+        <p className="font-serif font-black text-lg text-[#3D1F12]">Sweet product not found</p>
+        <button
+          onClick={() => navigate("/")}
+          className="px-5 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl font-semibold shadow-md transition cursor-pointer"
+        >
+          Go Back Home
+        </button>
+      </div>
+    );
+  }
+
+  const rating = product?.averageRating || 4.5;
+  const reviews = product?.totalReviews || 120;
 
   const discount = Math.round(
     ((product.mrp - product.sellingPrice) / product.mrp) * 100
@@ -195,16 +222,16 @@ const ProductDetails = () => {
               {product.shortDescription}
             </p>
 
-            {(product.totalReviews > 0 || activeBadges.length > 0) && (
+            {(reviews > 0 || activeBadges.length > 0) && (
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                {product.totalReviews > 0 && (
+                {reviews > 0 && (
                   <div className="flex items-center gap-1">
                     <Star size={14} fill="#2E8B3D" color="#2E8B3D" />
                     <span className="text-sm font-semibold" style={{ color: "#2E8B3D" }}>
-                      {product.averageRating}
+                      {rating}
                     </span>
                     <span className="text-sm" style={{ color: "#9A8A78" }}>
-                      ({product.totalReviews} reviews)
+                      ({reviews} reviews)
                     </span>
                   </div>
                 )}

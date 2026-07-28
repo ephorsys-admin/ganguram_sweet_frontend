@@ -14,7 +14,8 @@ const TermsOfService = lazy(() => import("../web/webPages/TermsOfService"));
 const PublicRoutes = (
   <Route path="/" element={<MainLayout />}>
     <Route index element={<HomePage />} />
-    <Route path="/products/:slug" element={<ProductDetails />} />
+    <Route path="/products" element={<OurSweets />} />
+    <Route path="/products/:productId" element={<ProductDetails />} />
     <Route path="/category/:categoryId" element={<CategoryListing />} />
     <Route path="/about" element={<AboutUs />} />
     <Route path="/gallery" element={<Gallery />} />

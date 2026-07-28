@@ -52,13 +52,14 @@ const Footer = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4 }}
+            className="space-y-3"
           >
-            <span
-              className="text-2xl leading-none tracking-tight"
-              style={{ color: "#5C2A1A" }}
-            >
-              Mithai Ghar
-            </span>
+            <div className="flex items-center gap-2.5">
+              <img src="/Mylogo/logo.png" alt="Ganguram Logo" className="h-12 object-contain" />
+              <span className="text-2xl font-serif font-black tracking-wider bg-gradient-to-r from-[#a65827] via-[#DFA250] to-[#5C2A1A] bg-clip-text text-transparent">
+                Maharaja
+              </span>
+            </div>
             <p className="mt-3 text-sm leading-relaxed" style={{ color: "#7A5C4A" }}>
               Traditional Indian sweets made with pure ghee, love, and
               generations-old recipes. Fresh mithai, every single day.
@@ -113,7 +114,7 @@ const Footer = () => {
             transition={{ duration: 0.4, delay: 0.2 }}
           >
             <h3 className="text-sm font-bold uppercase tracking-wide" style={{ color: "#5C2A1A" }}>
-              Our Sweets
+              Our Products
             </h3>
             <ul className="mt-4 space-y-2">
               {SWEET_LINKS.map((link) => (

@@ -148,6 +148,21 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ["Product"],
     }),
+    getCategoriesPublic: builder.query({
+      query: () => "/categories",
+      providesTags: ["Category"],
+    }),
+    getProductsPublic: builder.query({
+      query: (params) => ({
+        url: "/product",
+        params,
+      }),
+      providesTags: ["Product"],
+    }),
+    getProductDetailsPublic: builder.query({
+      query: (productId) => `/product/${productId}`,
+      providesTags: ["Product"],
+    }),
   }),
 });
 
@@ -167,4 +182,7 @@ export const {
   useDeleteProductMutation,
   useAddProductImageMutation,
   useDeleteProductImageMutation,
+  useGetCategoriesPublicQuery,
+  useGetProductsPublicQuery,
+  useGetProductDetailsPublicQuery,
 } = adminApi;
