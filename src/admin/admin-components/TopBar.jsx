@@ -11,8 +11,10 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { logOut } from "../../redux/features/auth/authSlice";
 import LogoutConfirmationModal from "./modals/LogoutConfirmationModal";
+import { useToast } from "../../context/ToastContext";
 
 const TopBar = ({ setSidebarOpen }) => {
+  const { showToast } = useToast();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const admin = useSelector((state) => state.auth.user);
@@ -39,6 +41,7 @@ const TopBar = ({ setSidebarOpen }) => {
 
   const handleLogout = () => {
     dispatch(logOut());
+    showToast("Logged out successfully. Secure session terminated.", "info");
     navigate("/admin");
     setIsLogoutModalOpen(false);
   };
@@ -112,8 +115,8 @@ const TopBar = ({ setSidebarOpen }) => {
           <Menu size={18} />
         </motion.button>
 
-        <span className="text-[14px] font-semibold tracking-wider text-slate-700 font-sans">
-          GANGURAM ADMIN CONTROL PORTAL
+        <span className="text-[12px] sm:text-[14px] font-semibold tracking-wider text-slate-700 font-sans">
+          GANGURAM <span className="hidden sm:inline">ADMIN CONTROL PORTAL</span>
         </span>
       </div>
 

@@ -21,8 +21,10 @@ import {
 import ProductTable from "../admin-components/ProductTable";
 import ProductModal from "../admin-components/modals/ProductModal";
 import DeleteConfirmationModal from "../admin-components/modals/DeleteConfirmationModal";
+import { useToast } from "../../context/ToastContext";
 
 const AdminProducts = () => {
+  const { showToast } = useToast();
   // Fetch real categories list to bind to dropdown
   const { data: categoriesResponse } = useGetCategoriesQuery();
   const categories = categoriesResponse?.data || [];
@@ -56,6 +58,7 @@ const AdminProducts = () => {
 
   const showAlert = (message, type = "success") => {
     setAlert({ show: true, message, type });
+    showToast(message, type);
     setTimeout(() => setAlert({ show: false, message: "", type: "success" }), 3000);
   };
 

@@ -114,7 +114,7 @@ const Footer = () => {
             transition={{ duration: 0.4, delay: 0.2 }}
           >
             <h3 className="text-sm font-bold uppercase tracking-wide" style={{ color: "#5C2A1A" }}>
-              Our Products
+              Our Items
             </h3>
             <ul className="mt-4 space-y-2">
               {SWEET_LINKS.map((link) => (

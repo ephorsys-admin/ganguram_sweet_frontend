@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import LogoutConfirmationModal from "./modals/LogoutConfirmationModal";
 import { useDispatch } from "react-redux";
 import { logOut } from "../../redux/features/auth/authSlice";
+import { useToast } from "../../context/ToastContext";
 
 const NAV_ITEMS = [
   { path: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
 ];
 
 const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
+  const { showToast } = useToast();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
@@ -26,6 +28,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
 
   const handleLogout = () => {
     dispatch(logOut());
+    showToast("Logged out successfully. Secure session terminated.", "info");
     navigate("/admin");
     setIsLogoutModalOpen(false);
   };

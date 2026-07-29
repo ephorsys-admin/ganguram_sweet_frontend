@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
-import { MessageSquare, Search, Filter } from "lucide-react";
+import { MessageSquare, Search, Filter, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import InquiryList from "../admin-components/InquiryList";
 import InquiryDetail from "../admin-components/InquiryDetail";
+import { useToast } from "../../context/ToastContext";
 
 const AdminInquiries = () => {
+  const { showToast } = useToast();
   // Load inquiries from localStorage
   const [inquiries, setInquiries] = useState(() => {
     const data = localStorage.getItem("ganguram_inquiries");
@@ -42,12 +45,16 @@ const AdminInquiries = () => {
         status: selectedInquiry.status === "Pending" ? "Resolved" : "Pending"
       });
     }
+    const target = inquiries.find(inq => inq.id === id);
+    const nextStatus = target?.status === "Pending" ? "Resolved" : "Pending";
+    showToast(`Inquiry marked as ${nextStatus}!`, "success");
   };
 
   const handleDeleteInquiry = (id) => {
     if (window.confirm("Are you sure you want to delete this inquiry record?")) {
       setInquiries(inquiries.filter(inq => inq.id !== id));
       setSelectedInquiry(null);
+      showToast("Inquiry record deleted successfully.", "info");
     }
   };
 
@@ -107,7 +114,7 @@ const AdminInquiries = () => {
         <div className="lg:col-span-2 space-y-4">
           {filteredInquiries.length === 0 ? (
             <div className="bg-white p-12 rounded-3xl border border-[#E6CCB2]/30 text-center space-y-4 shadow-xs">
-              <div className="mx-auto w-16 h-16 rounded-full bg-[#FAF6F0] flex items-center justify-center text-[#DFA250] border border-[#E6CCB2]/20">
+              <div className="mx-auto w-16 h-16 rounded-full bg-[#FAF6F0] flex items-center justify-center text-[#DFA250] border border-[#E6CCB2]/25">
                 <MessageSquare size={28} />
               </div>
               <div className="space-y-1">
@@ -124,8 +131,8 @@ const AdminInquiries = () => {
           )}
         </div>
 
-        {/* Right: Selected Inquiry Detail Component */}
-        <div className="bg-white p-5 rounded-3xl border border-[#E6CCB2]/30 shadow-xs h-fit sticky top-6">
+        {/* Right: Selected Inquiry Detail Component (Desktop Only) */}
+        <div className="hidden lg:block bg-white p-5 rounded-3xl border border-[#E6CCB2]/30 shadow-xs h-fit sticky top-6">
           <InquiryDetail 
             inquiry={selectedInquiry}
             onToggleStatus={handleToggleResolve}
@@ -134,6 +141,37 @@ const AdminInquiries = () => {
         </div>
 
       </div>
+
+      {/* Mobile/Tablet Detail Overlay Modal */}
+      <AnimatePresence>
+        {selectedInquiry && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 lg:hidden">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-5 relative overflow-hidden text-left"
+            >
+              <button
+                onClick={() => setSelectedInquiry(null)}
+                className="absolute right-4 top-4 p-1.5 hover:bg-slate-100 rounded-full transition text-[#5C2A1A] z-10 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+              <div className="mt-4">
+                <InquiryDetail 
+                  inquiry={selectedInquiry}
+                  onToggleStatus={handleToggleResolve}
+                  onDelete={(id) => {
+                    handleDeleteInquiry(id);
+                    setSelectedInquiry(null);
+                  }}
+                />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

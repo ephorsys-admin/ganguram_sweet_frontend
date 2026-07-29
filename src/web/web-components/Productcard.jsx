@@ -20,7 +20,7 @@ const SweetThumb = ({ bg }) => (
   </div>
 );
 
-const ProductCard = ({ product }) => {
+const ProductCard = ({ product, onViewDetails }) => {
   const navigate = useNavigate();
   const price = product.sellingPrice || product.price || 0;
   const mrp = product.mrp || 0;
@@ -32,6 +32,14 @@ const ProductCard = ({ product }) => {
   const imageUrl = product.images?.[0]?.url;
   const targetId = product._id || product.slug || product.id;
 
+  const handleDetailsClick = () => {
+    if (onViewDetails) {
+      onViewDetails(product);
+    } else {
+      navigate(`/products/${targetId}`);
+    }
+  };
+
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -40,7 +48,10 @@ const ProductCard = ({ product }) => {
       style={{ borderColor: "#F0E4CC" }}
     >
       {/* Image area */}
-      <div className="relative aspect-square w-full bg-[#FAF6F0]/30 flex items-center justify-center">
+      <div 
+        onClick={handleDetailsClick}
+        className="relative aspect-square w-full bg-[#FAF6F0]/30 flex items-center justify-center cursor-pointer"
+      >
         {imageUrl ? (
           <img src={imageUrl} alt={product.name} className="h-full w-full object-cover" />
         ) : (
@@ -79,7 +90,8 @@ const ProductCard = ({ product }) => {
         </div>
 
         <h3
-          className="line-clamp-2 text-sm font-bold leading-snug"
+          className="line-clamp-2 text-sm font-bold leading-snug cursor-pointer hover:underline"
+          onClick={handleDetailsClick}
           style={{ color: "#3D1F12" }}
         >
           {product.name}
@@ -104,7 +116,7 @@ const ProductCard = ({ product }) => {
 
         {/* Action */}
         <motion.button
-          onClick={() => navigate(`/products/${targetId}`)}
+          onClick={handleDetailsClick}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           className="mt-3 bg-yellow-600  text-white  cursor-pointer flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-bold"

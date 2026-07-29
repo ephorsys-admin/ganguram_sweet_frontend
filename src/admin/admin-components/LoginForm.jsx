@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../../redux/features/auth/authThunk";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "../../context/ToastContext";
 import {
   Mail,
   Lock,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 const LoginForm = ({ onForgotClick }) => {
+  const { showToast } = useToast();
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -47,17 +49,20 @@ const LoginForm = ({ onForgotClick }) => {
 
       if (loginUser.fulfilled.match(resultAction)) {
         setLoginSuccess(true);
+        showToast("Logged in successfully! Welcome to Maharaja Admin Portal.", "success");
         setTimeout(() => {
           setLoginSuccess(false);
           navigate("/admin/dashboard");
         }, 1000);
       } else {
-        setLoginError(
-          resultAction.payload?.message || "Invalid credentials. Please try again."
-        );
+        const errorMsg = resultAction.payload?.message || "Invalid credentials. Please try again.";
+        setLoginError(errorMsg);
+        showToast(errorMsg, "error");
       }
     } catch (err) {
-      setLoginError(err?.message || "An unexpected error occurred. Please try again.");
+      const errorMsg = err?.message || "An unexpected error occurred. Please try again.";
+      setLoginError(errorMsg);
+      showToast(errorMsg, "error");
     }
   };
 

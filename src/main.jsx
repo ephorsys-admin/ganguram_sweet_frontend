@@ -26,6 +26,8 @@ import { PersistGate } from "redux-persist/integration/react";
 // Application Root
 // =============================================
 
+import { ToastProvider } from "./context/ToastContext";
+
 ReactDOM.createRoot(
   document.getElementById("root")
 ).render(
@@ -34,7 +36,9 @@ ReactDOM.createRoot(
       loading={null}
       persistor={persistor}
     >
-      <App />
+      <ToastProvider>
+        <App />
+      </ToastProvider>
     </PersistGate>
   </Provider>
 );
