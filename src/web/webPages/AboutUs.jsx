@@ -94,14 +94,13 @@ const AboutUs = () => {
               Our Story
             </span>
             <h1
-              className="mt-3 text-3xl font-bold leading-tight sm:text-5xl"
+              className="mt-3 text-3xl font-bold leading-tight sm:text-5xl font-serif"
               style={{ color: "#3D1F12" }}
             >
-              Sweetness, Made the Way Home Does It
+              Pure Veg & Onion-Garlic Free Legacy
             </h1>
             <p className="mt-4 text-base sm:text-lg" style={{ color: "#5C3A24" }}>
-              For over 25 years, Mithai Ghar has been turning pure ghee, fresh
-              milk, and family recipes into sweets that taste like celebration.
+              For over 25 years, Maharaja Ganguram Sweets has been serving Baramunda, Bhubaneswar with authentic Indian confections, traditional Odia breakfast tiffins, and meals prepared completely free of onion and garlic.
             </p>
           </motion.div>
 
@@ -148,16 +147,11 @@ const AboutUs = () => {
           transition={{ duration: 0.4 }}
           className="text-center"
         >
-          <h2 className="text-2xl font-bold sm:text-3xl" style={{ color: "#3D1F12" }}>
-            Where It All Began
+          <h2 className="text-2xl font-bold sm:text-3xl font-serif" style={{ color: "#3D1F12" }}>
+            The Maharaja Legacy
           </h2>
-          <p className="mt-4 text-sm leading-relaxed sm:text-base" style={{ color: "#7A5C4A" }}>
-            Mithai Ghar started in 1999 as a tiny family-run shop with a single
-            copper kadhai and five recipes handed down from our grandmother.
-            What hasn't changed since then is our promise: pure ingredients, no
-            shortcuts, and sweets made fresh every single morning. Today, we
-            deliver that same homemade taste to thousands of homes — just a
-            little further than our neighbourhood.
+          <p className="mt-4 text-sm leading-relaxed sm:text-base font-sans" style={{ color: "#7A5C4A" }}>
+            Maharaja Ganguram Sweets is a popular pure vegetarian sweet and snack shop located at MIG 30, near Fire Station Square, Housing Board Colony, Baramunda, Bhubaneswar, Odisha 751003. We are widely celebrated for serving authentic Indian sweets and breakfast items completely free of onion and garlic. Our kitchen prepares every dish fresh daily using pure cow ghee and local high-quality ingredients, promising clean dining and takeaway confections for sweet enthusiasts and local families alike.
           </p>
         </motion.div>
       </section>
@@ -246,6 +240,49 @@ const AboutUs = () => {
         </div>
       </section>
 
+      {/* Menu Highlights Section */}
+      <section className="w-full border-t" style={{ backgroundColor: "#FFFDF8", borderColor: "#FBF3E4" }}>
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-2xl font-bold sm:text-3xl font-serif" style={{ color: "#3D1F12" }}>
+              Menu Highlights & Offerings
+            </h2>
+            <p className="mt-2 text-sm text-[#7A5C4A]">
+              Indulge in our curated vegetarian specialities, prepared fresh and strictly onion-garlic free.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-2xl border border-[#F0E4CC] shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow duration-300">
+              <div>
+                <h3 className="text-lg font-bold font-serif mb-3" style={{ color: "#8A2E2E" }}>Pure Veg Sweets</h3>
+                <p className="text-xs text-[#7A5C4A] leading-relaxed">
+                  Traditional Chhena delicacies (such as Rasgulla and Rasmalai), Special Kalakand, Kesar Peda, Doda Barfi, Dry Fruit Laddu, and Sandesh selections (like our signature Pan Sandesh). Sugar-free variants are also available.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-[#F0E4CC] shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow duration-300">
+              <div>
+                <h3 className="text-lg font-bold font-serif mb-3" style={{ color: "#8A2E2E" }}>No-Onion-No-Garlic Snacks</h3>
+                <p className="text-xs text-[#7A5C4A] leading-relaxed">
+                  Wholesome Odia breakfast items and savory evening tiffins including Bara, Aluchop, Veg Chop, Dosa varieties, Dahi Vada, Samosas, and our specialty Chowmein Samosas.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl border border-[#F0E4CC] shadow-xs flex flex-col justify-between hover:shadow-md transition-shadow duration-300">
+              <div>
+                <h3 className="text-lg font-bold font-serif mb-3" style={{ color: "#8A2E2E" }}>Main Meals & Deliveries</h3>
+                <p className="text-xs text-[#7A5C4A] leading-relaxed">
+                  Vegetarian lunch and dinner options including Special Mixed Veg curry, quick Chinese bites, and Veg Biryani. Order for dine-in, takeaway, or home delivery via Swiggy and Zomato.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="w-full" style={{ backgroundColor: "#8A2E2E" }}>
         <motion.div
@@ -257,10 +294,10 @@ const AboutUs = () => {
         >
           <Heart size={32} color="#F3D9A8" />
           <h2 className="text-2xl font-bold text-white sm:text-3xl">
-            Taste the tradition for yourself
+            Taste the royal tradition for yourself
           </h2>
           <p className="text-sm text-white/85 sm:text-base">
-            Explore our full range of sweets, savouries, and festive hampers.
+            Explore our full range of sweets, savouries, and tiffin hampers.
           </p>
           <motion.a
             href="/"
@@ -270,7 +307,7 @@ const AboutUs = () => {
             style={{ backgroundColor: "#FFF8EC", color: "#8A2E2E" }}
           >
             <Users size={16} />
-            Shop Our Sweets
+            Shop Our Items
           </motion.a>
         </motion.div>
       </section>
