@@ -6,6 +6,7 @@ import CategoryListing from "../web/web-components/Categorylisting";
 import AboutUs from "../web/webPages/AboutUs";
 
 const HomePage = lazy(() => import("../web/webPages/HomePage"));
+const OurSweets = lazy(() => import("../web/webPages/OurSweets"));
 const Gallery = lazy(() => import("../web/webPages/Gallery"));
 const Contact = lazy(() => import("../web/webPages/Contact"));
 const PrivacyPolicy = lazy(() => import("../web/webPages/PrivacyPolicy"));
