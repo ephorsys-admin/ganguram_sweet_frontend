@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { ClipboardList, Search, Filter } from "lucide-react";
 import OrderTable from "../admin-components/OrderTable";
 import OrderDetailModal from "../admin-components/modals/OrderDetailModal";
+import { useToast } from "../../context/ToastContext";
 
 const AdminOrders = () => {
+  const { showToast } = useToast();
   // Load orders from localStorage
   const [orders, setOrders] = useState(() => {
     const data = localStorage.getItem("ganguram_orders");
@@ -105,12 +107,14 @@ const AdminOrders = () => {
     if (selectedOrder && selectedOrder.id === id) {
       setSelectedOrder({ ...selectedOrder, status: newStatus });
     }
+    showToast(`Order status updated successfully!`, "success");
   };
 
   const handleDeleteOrder = (id) => {
     if (window.confirm("Are you sure you want to delete this order record?")) {
       setOrders(orders.filter(o => o.id !== id));
       setDetailsOpen(false);
+      showToast(`Order record deleted successfully.`, "info");
     }
   };
 

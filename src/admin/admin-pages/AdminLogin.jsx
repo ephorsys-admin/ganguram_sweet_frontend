@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Sparkles,
-  ChefHat,
-  ShoppingBag,
-  TrendingUp,
-  DollarSign,
-  Award
-} from "lucide-react";
+import { Sparkles, Compass } from "lucide-react";
+import { MaharajaCrown } from "@/admin/admin-components/SweetIcons";
 import LoginForm from "../admin-components/LoginForm";
 import ForgotPasswordForm from "../admin-components/ForgotPasswordForm";
 
@@ -17,159 +11,57 @@ const AdminLogin = () => {
   return (
     <div className="min-h-screen w-screen flex bg-[#FAF6F0] overflow-hidden select-none font-sans">
       
-      {/* LEFT SIDE PANEL: Ambient Brand Showcase (hidden on mobile) */}
-      <div className="relative hidden lg:flex lg:w-1/2 min-h-screen bg-[#3D271B] overflow-hidden flex-col justify-between p-12 z-10">
+      {/* LEFT SIDE PANEL: Modern Luxury Sweet Shop Showcase (hidden on mobile) */}
+      <div className="relative hidden lg:flex lg:w-1/2 min-h-screen overflow-hidden flex-col justify-between p-12 z-10 border-r border-[#E6CCB2]/20">
         
-        {/* Animated Background Blobs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div
-            animate={{
-              x: [0, 50, -30, 0],
-              y: [0, -50, 40, 0],
-              scale: [1, 1.2, 0.9, 1]
-            }}
-            transition={{
-              duration: 15,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#DFA250]/15 blur-[100px]"
-          />
-          <motion.div
-            animate={{
-              x: [0, -40, 30, 0],
-              y: [0, 60, -30, 0],
-              scale: [1, 0.9, 1.1, 1]
-            }}
-            transition={{
-              duration: 18,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-[#B0652F]/20 blur-[120px]"
-          />
-          
-          {/* Subtle Grid Pattern overlay */}
-          <div 
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: `radial-gradient(var(--color-brand-accent) 1px, transparent 0px)`,
-              backgroundSize: "24px 24px"
-            }}
-          />
-        </div>
+        {/* Full Sweet Shop Background Image with Dark Contrast Overlay */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-1000"
+          style={{ 
+            backgroundImage: `url('/footer-bg.jpg')`,
+            filter: "brightness(0.35) contrast(1.15) saturate(0.9)" 
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#2B1B12]/80 via-transparent to-[#2B1B12]/50 pointer-events-none" />
 
         {/* Top Branding Section */}
-        <div className="relative flex items-center space-x-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-[#DFA250] to-[#B0652F] flex items-center justify-center shadow-lg shadow-[#3D271B]/50 border border-[#FAF6F0]/20">
-            <Sparkles className="h-5 w-5 text-[#FAF6F0] animate-pulse" />
+        <div className="relative flex items-center space-x-3.5 z-10">
+          <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-[#DFA250] to-[#B0652F] flex items-center justify-center shadow-xl shadow-black/30 border border-[#FAF6F0]/20">
+            <MaharajaCrown className="h-8 w-8 filter drop-shadow" />
           </div>
           <div>
-            <h2 className="text-[#FAF6F0] font-serif font-semibold tracking-wider text-lg">GANGURAM</h2>
-            <p className="text-[#DFA250] text-[10px] uppercase tracking-[0.2em] font-semibold leading-none">Sweet Heritage</p>
+            <h2 className="text-[#FAF6F0] font-serif font-semibold tracking-wider text-2xl">GANGURAM</h2>
+            <p className="text-[#DFA250] text-[10px] uppercase tracking-[0.3em] font-semibold leading-none mt-0.5">Sweet Heritage</p>
           </div>
         </div>
 
-        {/* Center Presentation: Interactive Dashboard Preview */}
-        <div className="relative flex flex-col justify-center flex-grow py-12 max-w-lg">
+        {/* Center Presentation: Modern Sweet Shop Presentation */}
+        <div className="relative flex flex-col justify-center flex-grow py-12 max-w-lg z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="space-y-6"
           >
-            <div className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-[#DFA250]/10 border border-[#DFA250]/20 text-[#DFA250] text-xs font-medium">
-              <Award className="h-3.5 w-3.5" />
-              <span>Royal Portal Admin Control</span>
+            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-[#DFA250]/15 border border-[#DFA250]/30 text-[#DFA250] text-xs font-semibold tracking-wide backdrop-blur-md">
+              <Compass className="h-3.5 w-3.5" />
+              <span>Imperial Sweet Boutique Operations</span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-serif text-[#FAF6F0] leading-tight font-medium">
-              Oversee the Empire of <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#DFA250] via-[#E6CCB2] to-[#DFA250] drop-shadow-sm font-bold">Royal Taste</span>.
+            <h1 className="text-4xl md:text-5xl font-serif text-[#FAF6F0] leading-tight font-medium drop-shadow-md">
+              Savor the Legacy of <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#DFA250] via-[#E6CCB2] to-[#DFA250] drop-shadow-sm font-bold">Royal Taste</span>.
             </h1>
             
-            <p className="text-[#E6CCB2]/80 text-sm leading-relaxed">
-              Log in to regulate production, manage sweet recipes, track logistics, and audit regional outlets across the imperial network.
+            <p className="text-[#E6CCB2]/90 text-sm leading-relaxed drop-shadow">
+              Orchestrate the creation of Bengal's finest heritage confections. Oversee artisanal kitchen batches, monitor fresh production lines, and dispatch luxury sweet hampers across the empire.
             </p>
           </motion.div>
-
-          {/* Floating statistics dashboard card previews */}
-          <div className="mt-12 space-y-4">
-            
-            {/* Card 1: Revenue Stats */}
-            <motion.div
-              whileHover={{ y: -5, scale: 1.02 }}
-              animate={{ y: [0, -5, 0] }}
-              transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-              className="p-4 rounded-2xl bg-[#FAF6F0]/5 border border-[#FAF6F0]/10 backdrop-blur-md flex items-center justify-between shadow-lg cursor-pointer"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="h-10 w-10 rounded-xl bg-[#DFA250]/15 border border-[#DFA250]/30 flex items-center justify-center text-[#DFA250]">
-                  <DollarSign className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-[#E6CCB2]/60">Daily Revenue</p>
-                  <p className="text-lg font-bold text-[#FAF6F0]">₹1,84,350</p>
-                </div>
-              </div>
-              <div className="flex flex-col items-end text-right">
-                <span className="text-xs font-semibold text-emerald-400 flex items-center gap-0.5">
-                  <TrendingUp className="h-3 w-3" /> +14.2%
-                </span>
-                <span className="text-[10px] text-[#E6CCB2]/40">vs yesterday</span>
-              </div>
-            </motion.div>
-
-            {/* Card 2: Kitchen State Stats */}
-            <motion.div
-              whileHover={{ y: -5, scale: 1.02 }}
-              animate={{ y: [0, -6, 0] }}
-              transition={{ repeat: Infinity, duration: 7, ease: "easeInOut", delay: 0.5 }}
-              className="p-4 rounded-2xl bg-[#FAF6F0]/5 border border-[#FAF6F0]/10 backdrop-blur-md flex items-center justify-between shadow-lg cursor-pointer"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="h-10 w-10 rounded-xl bg-[#B0652F]/15 border border-[#B0652F]/30 flex items-center justify-center text-[#B0652F]">
-                  <ChefHat className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-[#E6CCB2]/60">Kitchen Operations</p>
-                  <p className="text-lg font-bold text-[#FAF6F0]">Active Preparation</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-xs font-semibold text-[#DFA250]">12 Royal Batches</span>
-                <p className="text-[10px] text-[#E6CCB2]/40">8 Master Chefs</p>
-              </div>
-            </motion.div>
-
-            {/* Card 3: Dispatch Log */}
-            <motion.div
-              whileHover={{ y: -5, scale: 1.02 }}
-              animate={{ y: [0, -4, 0] }}
-              transition={{ repeat: Infinity, duration: 5, ease: "easeInOut", delay: 1 }}
-              className="p-4 rounded-2xl bg-[#FAF6F0]/5 border border-[#FAF6F0]/10 backdrop-blur-md flex items-center justify-between shadow-lg cursor-pointer"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="h-10 w-10 rounded-xl bg-[#E6CCB2]/10 border border-[#E6CCB2]/20 flex items-center justify-center text-[#E6CCB2]">
-                  <ShoppingBag className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-[#E6CCB2]/60">Pending Dispatch</p>
-                  <p className="text-lg font-bold text-[#FAF6F0]">48 Catering Orders</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#B0652F]/20 text-[#DFA250] border border-[#B0652F]/30 animate-pulse">
-                  5 Express
-                </span>
-                <p className="text-[10px] text-[#E6CCB2]/40 mt-1">Ready to ship</p>
-              </div>
-            </motion.div>
-          </div>
         </div>
 
         {/* Bottom Metadata */}
-        <div className="relative text-xs text-[#E6CCB2]/40 font-mono">
-          <span>SECURE PROTOCOL V4.3.0 // SHIELD SECURED</span>
+        <div className="relative text-xs text-[#E6CCB2]/50 font-mono flex justify-between items-center z-10 drop-shadow">
+          <span>SECURE ROYAL PORTAL V4.4 // SSL ENCRYPTED</span>
+          <span className="text-[10px] text-[#DFA250]/50">© MAHARAJA GANGURAM</span>
         </div>
       </div>
 

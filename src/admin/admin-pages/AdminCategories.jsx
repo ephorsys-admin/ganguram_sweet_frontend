@@ -14,8 +14,10 @@ import {
 } from "../../redux/services/adminApi";
 import CategoryTable from "../admin-components/CategoryTable";
 import CategoryModal from "../admin-components/modals/CategoryModal";
+import { useToast } from "../../context/ToastContext";
 
 const AdminCategories = () => {
+  const { showToast } = useToast();
   const { data: response, isLoading, isError, refetch } = useGetCategoriesQuery();
   const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
   const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
@@ -32,6 +34,7 @@ const AdminCategories = () => {
 
   const showAlert = (message, type = "success") => {
     setAlert({ show: true, message, type });
+    showToast(message, type);
     setTimeout(() => setAlert({ show: false, message: "", type: "success" }), 3000);
   };
 
