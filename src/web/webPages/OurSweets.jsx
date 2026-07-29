@@ -10,9 +10,11 @@ import {
   Plus, 
   Truck, 
   ShieldCheck, 
-  CheckCircle2 
+  CheckCircle2,
+  MapPin 
 } from "lucide-react";
 import ProductCard from "../web-components/Productcard";
+import LocationPicker from "../web-components/LocationPicker";
 import { 
   useGetProductsPublicQuery, 
   useGetCategoriesPublicQuery, 
@@ -27,6 +29,8 @@ const ProductDetailsModal = ({ productId, onClose }) => {
   const [activeImage, setActiveImage] = useState(0);
   const [qty, setQty] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [coords, setCoords] = useState(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -36,8 +40,80 @@ const ProductDetailsModal = ({ productId, onClose }) => {
   });
   const [errors, setErrors] = useState({});
 
-  const handleChange = (field) => (e) =>
+  const handleLocateUser = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setCoords({ lat: latitude, lon: longitude });
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          
+          if (data && data.display_name) {
+            setForm((prev) => ({
+              ...prev,
+              address: data.display_name
+            }));
+            setErrors((prev) => ({ ...prev, address: "" }));
+          } else {
+            setForm((prev) => ({
+              ...prev,
+              address: `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`
+            }));
+          }
+        } catch (error) {
+          console.error("Reverse geocoding error:", error);
+          setForm((prev) => ({
+            ...prev,
+            address: `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`
+          }));
+        } finally {
+          setLocating(false);
+        }
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        alert("Failed to get your location. Please check your browser location permissions.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleLocationChange = async (lat, lon) => {
+    setCoords({ lat, lon });
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+      );
+      const data = await response.json();
+      if (data && data.display_name) {
+        setForm((prev) => ({ 
+          ...prev, 
+          address: data.display_name 
+        }));
+        setErrors((prev) => ({ ...prev, address: "" }));
+      }
+    } catch (error) {
+      console.error("Reverse geocoding error:", error);
+    }
+  };
+
+  const handleChange = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
+    if (field === "address" && !e.target.value.trim()) {
+      setCoords(null);
+    }
+  };
 
   const validate = () => {
     const errs = {};
@@ -366,18 +442,56 @@ const ProductDetailsModal = ({ productId, onClose }) => {
                     )}
                   </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs font-bold text-[#5C2A1A]">
-                      Delivery Address
-                    </label>
-                    <input
-                      type="text"
-                      value={form.address}
-                      onChange={handleChange("address")}
-                      placeholder="Street address, city"
-                      className="w-full rounded-lg border border-[#E8C68A] px-3 py-2 text-sm outline-none bg-white focus:ring-1 focus:ring-[#8A2E2E]"
-                      style={{ borderColor: errors.address ? "#8A2E2E" : "#E8C68A" }}
-                    />
+                  <div className="sm:col-span-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="block text-xs font-bold text-[#5C2A1A]">
+                        Delivery Address
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleLocateUser}
+                        disabled={locating}
+                        className="text-xs font-bold flex items-center gap-1 text-[#8A2E2E] hover:underline focus:outline-hidden disabled:opacity-50 cursor-pointer"
+                      >
+                        {locating ? (
+                          <>
+                            <Loader2 size={12} className="animate-spin" />
+                            <span>Locating...</span>
+                          </>
+                        ) : (
+                          <>
+                            <MapPin size={12} />
+                            <span>Use Current Location</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <div className={`grid grid-cols-1 ${coords ? "md:grid-cols-2" : ""} gap-4`}>
+                      <div>
+                        <input
+                          type="text"
+                          value={form.address}
+                          onChange={handleChange("address")}
+                          placeholder="Street address, city"
+                          className="w-full rounded-lg border border-[#E8C68A] px-3 py-2 text-sm outline-none bg-white focus:ring-1 focus:ring-[#8A2E2E] font-sans"
+                          style={{ borderColor: errors.address ? "#8A2E2E" : "#E8C68A" }}
+                        />
+                      </div>
+                      {coords && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="h-[150px] rounded-lg overflow-hidden border border-[#E8C68A] relative shadow-xs bg-white"
+                        >
+                          <LocationPicker
+                            coords={coords}
+                            onLocationChange={handleLocationChange}
+                          />
+                        </motion.div>
+                      )}
+                    </div>
+
                     {errors.address && (
                       <p className="mt-1 text-xs font-semibold text-[#8A2E2E]">
                         {errors.address}

@@ -15,10 +15,11 @@ const BRANCHES = [
   {
     city: "Bhubaneswar",
     role: "Flagship Heritage Store",
-    address: "Plot 42, Heritage Zone, MG Road, Bhubaneswar, Odisha, PIN-751001",
-    phone: "+91 674 9876543",
-    email: "bbsr@mithaighar.com",
-    hours: "9:00 AM - 10:00 PM (Everyday)",
+    address: "MIG 30, near Fire Station Square, Housing Board Colony, Baramunda, Bhubaneswar, Odisha 751003",
+    phone: "+91 94371 66822",
+    email: "maharaja.ganguram@gmail.com",
+    hours: "8:00 AM - 10:00 PM (Everyday)",
+    mapUrl: "https://www.google.com/maps/dir//Maharaja+Ganguram+Sweets,+MIG+30,+near+Fire+Station+Square,+Housing+Board+Colony,+Baramunda,+Bhubaneswar,+Odisha+751003/@20.2682918,85.7769154,3268m/data=!3m1!1e3!4m8!4m7!1m0!1m5!1m1!1s0x3a19a787f69051f5:0x18ac1c1810f5f93d!2m2!1d85.7983873!2d20.2804548"
   },
 ];
 
@@ -257,7 +258,14 @@ const Contact = () => {
                   <ul className="space-y-2.5 text-sm" style={{ color: "#7A5C4A" }}>
                     <li className="flex items-start gap-2.5">
                       <MapPin size={15} className="mt-0.5 shrink-0 text-[#8A2E2E]" />
-                      <span>{branch.address}</span>
+                      <a
+                        href={branch.mapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline hover:text-[#8A2E2E] transition-colors"
+                      >
+                        {branch.address}
+                      </a>
                     </li>
                     <li className="flex items-center gap-2.5">
                       <Phone size={15} className="shrink-0 text-[#8A2E2E]" />
@@ -271,9 +279,19 @@ const Contact = () => {
                         {branch.email}
                       </a>
                     </li>
-                    <li className="flex items-center gap-2.5 border-t pt-2 mt-2" style={{ borderColor: "#FBF3E4" }}>
-                      <Clock size={15} className="shrink-0 text-[#7A5C4A]" />
-                      <span>{branch.hours}</span>
+                    <li className="flex items-center gap-2.5 border-t pt-2 mt-2 justify-between" style={{ borderColor: "#FBF3E4" }}>
+                      <div className="flex items-center gap-2.5">
+                        <Clock size={15} className="shrink-0 text-[#7A5C4A]" />
+                        <span>{branch.hours}</span>
+                      </div>
+                      <a
+                        href={branch.mapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-[#8A2E2E] hover:underline"
+                      >
+                        Get Directions
+                      </a>
                     </li>
                   </ul>
                 </motion.div>
@@ -487,10 +505,10 @@ const Contact = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6 mb-8" style={{ borderColor: "#F0E4CC" }}>
               <div>
                 <h3 className="text-xl font-bold font-serif" style={{ color: "#3D1F12" }}>
-                  Mithai Ghar Heritage Locator
+                  Maharaja Ganguram Store Locator
                 </h3>
                 <p className="text-sm" style={{ color: "#7A5C4A" }}>
-                  Discover our flagship lounge hotspots and master kitchens.
+                  Find us on Google Maps and get royal directions to our sweet store.
                 </p>
               </div>
               <div className="flex items-center gap-4 text-xs font-semibold" style={{ color: "#7A5C4A" }}>
@@ -501,42 +519,41 @@ const Contact = () => {
               </div>
             </div>
 
-            {/* Vintage style SVG Map container */}
+            {/* Google Map iframe container */}
             <div
-              className="h-[280px] md:h-[350px] w-full rounded-xl relative overflow-hidden border flex items-center justify-center"
-              style={{ backgroundColor: "#FFFDF8", borderColor: "#F0E4CC" }}
+              className="h-[300px] md:h-[400px] w-full rounded-xl relative overflow-hidden border flex items-center justify-center shadow-inner"
+              style={{ borderColor: "#F0E4CC" }}
             >
-              {/* Map background grids and shapes resembling India or regional layouts with heritage aesthetic */}
-              <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#8A2E2E_1px,transparent_1px)] [background-size:16px_16px]" />
+              <iframe
+                title="Maharaja Ganguram Sweets Location Map"
+                src="https://maps.google.com/maps?q=Maharaja+Ganguram+Sweets+MIG+30+near+Fire+Station+Square+Housing+Board+Colony+Baramunda+Bhubaneswar+Odisha+751003&t=&z=16&ie=UTF8&iwloc=&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen=""
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="w-full h-full"
+              ></iframe>
               
-              <svg className="w-full h-full absolute inset-0 text-[#8A2E2E]/10" viewBox="0 0 800 400" fill="none">
-                <path d="M100 200 C 150 150, 250 250, 350 200 C 450 150, 500 280, 600 220 S 700 120, 780 200" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" />
-                <path d="M50 300 C 180 220, 280 320, 380 270 C 480 220, 560 380, 680 300" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" />
-              </svg>
-
-              {/* Bhubaneswar Marker */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6 }}
-                className="absolute top-[62%] left-[56%] flex flex-col items-center cursor-pointer group"
-              >
-                <div className="relative flex flex-col items-center">
-                  <span className="absolute -inset-3 bg-[#8A2E2E]/25 rounded-full animate-ping pointer-events-none" />
-                  <div className="w-6 h-6 bg-[#8A2E2E] rounded-full border-2 border-[#E8C68A] flex items-center justify-center shadow-lg">
-                    <Sparkles size={11} className="text-[#FFEFC2]" />
-                  </div>
+              {/* Overlay directions link card */}
+              <div className="absolute bottom-4 right-4 left-4 sm:left-auto bg-white/95 p-4 rounded-xl border border-[#F0E4CC] shadow-md max-w-sm space-y-2">
+                <div className="flex items-center gap-2">
+                  <MapPin size={16} className="text-[#8A2E2E]" />
+                  <span className="text-xs font-bold text-[#3D1F12]">Maharaja Ganguram Sweets</span>
                 </div>
-                <div className="absolute top-7 bg-white/95 px-2 py-1 rounded-md text-[11px] font-bold shadow-sm border border-[#E8C68A] text-[#8A2E2E] whitespace-nowrap">
-                  Bhubaneswar Flagship
-                </div>
-              </motion.div>
-
-              <div
-                className="absolute bottom-4 left-4 right-4 bg-white/95 p-3 rounded-lg border max-w-sm text-xs shadow-md hidden sm:block"
-                style={{ borderColor: "#F0E4CC", color: "#7A5C4A" }}
-              >
-                <strong>Hospitality Note:</strong> All locations are open 7 days a week including public holidays. Standard precautions and sanitised deliveries are online in all regions.
+                <p className="text-[10px] text-[#7A5C4A] leading-relaxed">
+                  MIG 30, near Fire Station Square, Housing Board Colony, Baramunda, Bhubaneswar, Odisha 751003
+                </p>
+                <a
+                  href="https://www.google.com/maps/dir//Maharaja+Ganguram+Sweets,+MIG+30,+near+Fire+Station+Square,+Housing+Board+Colony,+Baramunda,+Bhubaneswar,+Odisha+751003/@20.2682918,85.7769154,3268m/data=!3m1!1e3!4m8!4m7!1m0!1m5!1m1!1s0x3a19a787f69051f5:0x18ac1c1810f5f93d!2m2!1d85.7983873!2d20.2804548"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 text-[11px] font-bold text-white bg-[#8A2E2E] hover:bg-[#6b2020] px-4 py-2 rounded-full shadow-sm hover:shadow-md transition cursor-pointer"
+                >
+                  <Sparkles size={11} className="text-[#FFEFC2]" />
+                  Get Directions in Google Maps
+                </a>
               </div>
             </div>
           </motion.div>
