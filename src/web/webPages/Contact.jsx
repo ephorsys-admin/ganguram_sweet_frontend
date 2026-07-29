@@ -14,11 +14,11 @@ import {
 const BRANCHES = [
   {
     city: "Bhubaneswar",
-    role: "Flagship Heritage Store",
+    role: "100% Pure Vegetarian & Onion-Garlic Free",
     address: "MIG 30, near Fire Station Square, Housing Board Colony, Baramunda, Bhubaneswar, Odisha 751003",
     phone: "+91 94371 66822",
     email: "maharaja.ganguram@gmail.com",
-    hours: "8:00 AM - 10:00 PM (Everyday)",
+    hours: "7:00 AM - 10:00 PM (Everyday)",
     mapUrl: "https://www.google.com/maps/dir//Maharaja+Ganguram+Sweets,+MIG+30,+near+Fire+Station+Square,+Housing+Board+Colony,+Baramunda,+Bhubaneswar,+Odisha+751003/@20.2682918,85.7769154,3268m/data=!3m1!1e3!4m8!4m7!1m0!1m5!1m1!1s0x3a19a787f69051f5:0x18ac1c1810f5f93d!2m2!1d85.7983873!2d20.2804548"
   },
 ];
