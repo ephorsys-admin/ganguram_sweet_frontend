@@ -17,6 +17,7 @@ import {
 import ProductCard from "../web-components/Productcard";
 import LocationPicker from "../web-components/LocationPicker";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { getCategoriesPublic } from "../../redux/features/category/categoryThunk";
 import { getProductsPublic, getProductById } from "../../redux/features/product/productThunk";
 
@@ -767,6 +768,7 @@ const ProductDetailsModal = ({ productId, onClose }) => {
 
 const OurSweets = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedProductId, setSelectedProductId] = useState(null);
@@ -920,21 +922,12 @@ const OurSweets = () => {
               <ProductCard
                 key={product._id}
                 product={product}
-                onViewDetails={(p) => setSelectedProductId(p._id)}
+                onViewDetails={(p) => navigate(`/products/${p._id}`)}
               />
             ))}
           </motion.div>
         )}
       </div>
-
-      <AnimatePresence>
-        {selectedProductId && (
-          <ProductDetailsModal
-            productId={selectedProductId}
-            onClose={() => setSelectedProductId(null)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };

@@ -25,6 +25,9 @@ const getLocalStorageData = (key, fallback) => {
 const AdminDashboard = () => {
   const dispatch = useDispatch();
   const { categories = [] } = useSelector((state) => state.category);
+  const admin = useSelector((state) => state.auth.user);
+  const adminName = admin?.name || "Admin User";
+  const adminRole = admin?.role === "super_admin" ? "Super Admin" : "Admin";
   const categoryCount = categories.length;
 
   useEffect(() => {
@@ -78,8 +81,12 @@ const AdminDashboard = () => {
       {/* Title Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-serif font-black text-[#3D271B]">Dashboard</h1>
-          <p className="text-xs text-[#6E5A4F] mt-1">Regulate operations, track performance, and audit sweets orders.</p>
+          <h1 className="text-2xl md:text-3xl font-serif font-black text-[#3D271B]">
+            Welcome back, {adminName}
+          </h1>
+          <p className="text-xs text-[#6E5A4F] mt-1">
+            Logged in as <span className="font-extrabold text-[#a65827] uppercase tracking-wide">{adminRole}</span>. Regulate operations, track performance, and audit sweets orders.
+          </p>
         </div>
         <div className="text-xs text-[#a65827] font-semibold bg-[#FAF0E6] px-3 py-1.5 rounded-lg border border-[#E6CCB2]/40 font-mono">
           SYSTEM STATUS: ONLINE

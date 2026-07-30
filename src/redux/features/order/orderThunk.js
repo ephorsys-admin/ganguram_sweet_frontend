@@ -177,3 +177,71 @@ export const generateInvoice = createAsyncThunk(
     );
   }
 );
+// ==========================================
+// Thunk: Get All Delete Requests (Super Admin)
+// ==========================================
+export const getAllDeleteRequests = createAsyncThunk(
+  "order/getAllDeleteRequests",
+  async (_, thunkAPI) => {
+    return await fetchWithAuth("/order/delete-request/all", { method: "GET" }, thunkAPI);
+  }
+);
+
+// ==========================================
+// Thunk: Approve Delete Request (Super Admin)
+// ==========================================
+export const approveDeleteRequest = createAsyncThunk(
+  "order/approveDeleteRequest",
+  async (requestId, thunkAPI) => {
+    return await fetchWithAuth(
+      `/order/delete-request/approve/${requestId}`,
+      {
+        method: "PATCH",
+      },
+      thunkAPI
+    );
+  }
+);
+
+// ==========================================
+// Thunk: Reject Delete Request (Super Admin)
+// ==========================================
+export const rejectDeleteRequest = createAsyncThunk(
+  "order/rejectDeleteRequest",
+  async (requestId, thunkAPI) => {
+    return await fetchWithAuth(
+      `/order/delete-request/reject/${requestId}`,
+      {
+        method: "PATCH",
+      },
+      thunkAPI
+    );
+  }
+);
+
+// ==========================================
+// Thunk: Create Public Order (Customer Front)
+// ==========================================
+export const createPublicOrder = createAsyncThunk(
+  "order/createPublicOrder",
+  async (orderPayload, { rejectWithValue }) => {
+    try {
+      const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5501/api/v1";
+      const response = await fetch(`${BASE_URL}/order/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderPayload),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data);
+      }
+      return data;
+    } catch (error) {
+      return rejectWithValue({ message: error.message });
+    }
+  }
+);
