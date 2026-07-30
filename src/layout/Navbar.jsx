@@ -35,7 +35,7 @@ const Navbar = () => {
         </NavLink>
 
         {/* Desktop Menu */}
-        <ul className="hidden items-center gap-8 md:flex">
+        <ul className="hidden items-center gap-8 lg:flex">
           {NAV_LINKS.map((link, i) => (
             <motion.li
               key={link.name}
@@ -64,7 +64,7 @@ const Navbar = () => {
         {/* Contact Button */}
         <NavLink
           to="/contact"
-          className="hidden md:flex items-center gap-2 rounded-full bg-yellow-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-yellow-600 transition"
+          className="hidden lg:flex items-center gap-2 rounded-full bg-yellow-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-yellow-600 transition"
         >
           <Phone size={16} />
           Contact Now
@@ -73,7 +73,7 @@ const Navbar = () => {
         {/* Mobile Toggle */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden"
+          className="lg:hidden"
           style={{ color: "#5C2A1A" }}
         >
           <AnimatePresence mode="wait">
@@ -108,7 +108,7 @@ const Navbar = () => {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="overflow-hidden border-t md:hidden"
+            className="overflow-hidden border-t lg:hidden"
             style={{
               backgroundColor: "#FFF8EC",
               borderColor: "#E8C68A",

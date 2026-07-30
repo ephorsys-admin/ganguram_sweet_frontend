@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChefHat, 
@@ -15,20 +15,24 @@ import {
 } from "lucide-react";
 import ProductCard from "../web-components/Productcard";
 import LocationPicker from "../web-components/LocationPicker";
-import { 
-  useGetProductsPublicQuery, 
-  useGetCategoriesPublicQuery, 
-  useGetProductDetailsPublicQuery 
-} from "../../redux/services/adminApi";
+import { useDispatch, useSelector } from "react-redux";
+import { getCategoriesPublic } from "../../redux/features/category/categoryThunk";
+import { getProductsPublic, getProductById } from "../../redux/features/product/productThunk";
 
-// Product Details Modal Overlay Component
 const ProductDetailsModal = ({ productId, onClose }) => {
-  const { data: response, isLoading, isError } = useGetProductDetailsPublicQuery(productId);
-  const product = response?.data;
+  const dispatch = useDispatch();
+  const { currentProduct: product, isLoading, error } = useSelector((state) => state.product);
+
+  useEffect(() => {
+    if (productId) {
+      dispatch(getProductById(productId));
+    }
+  }, [dispatch, productId]);
 
   const [activeImage, setActiveImage] = useState(0);
   const [qty, setQty] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
   const [coords, setCoords] = useState(null);
   const [form, setForm] = useState({
@@ -118,24 +122,52 @@ const ProductDetailsModal = ({ productId, onClose }) => {
   const validate = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = "Name is required";
-    if (!form.email.trim()) errs.email = "Email is required";
-    else if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.email = "Enter a valid email";
+    if (form.email.trim() && !/^\S+@\S+\.\S+$/.test(form.email)) errs.email = "Enter a valid email";
     if (!form.phone.trim()) errs.phone = "Phone number is required";
     else if (!/^\d{10}$/.test(form.phone.replace(/\D/g, "")))
       errs.phone = "Enter a valid 10-digit number";
     if (!form.address.trim()) errs.address = "Delivery address is required";
+    else if (form.address.trim().length < 10) errs.address = "Address must be at least 10 characters";
     return errs;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
-    // Simulate order submission API call
-    console.log("Order inquiry submitted:", { productId: product._id, qty, ...form });
-    setSubmitted(true);
+    setSubmitting(true);
+    const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5501/api/v1";
+
+    try {
+      const response = await fetch(`${BASE_URL}/order/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          product: product._id,
+          quantity: qty,
+          customerName: form.name.trim(),
+          customerEmail: form.email.trim(),
+          customerMobile: form.phone.trim(),
+          deliveryAddress: form.address.trim(),
+          specialInstructions: form.notes.trim(),
+        }),
+      });
+
+      const resData = await response.json();
+      if (!response.ok) {
+        alert(resData.message || "Failed to place order. Please try again.");
+      } else {
+        setSubmitted(true);
+      }
+    } catch (err) {
+      alert("Something went wrong while placing your order. Please check your connection.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -148,7 +180,7 @@ const ProductDetailsModal = ({ productId, onClose }) => {
     );
   }
 
-  if (isError || !product) {
+  if (error || !product) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs">
         <div className="bg-white p-8 rounded-3xl text-center space-y-4 max-w-sm">
@@ -514,9 +546,16 @@ const ProductDetailsModal = ({ productId, onClose }) => {
                   <div className="sm:col-span-2">
                     <button
                       type="submit"
-                      className="w-full bg-[#8A2E2E] hover:bg-[#5C2A1A] text-white font-bold py-3 px-6 rounded-lg text-sm transition cursor-pointer"
+                      disabled={submitting}
+                      className="w-full bg-[#8A2E2E] hover:bg-[#5C2A1A] text-white font-bold py-3 px-6 rounded-lg text-sm transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
                     >
-                      Send Order Request
+                      {submitting ? (
+                        <>
+                          <Loader2 className="animate-spin h-4 w-4" /> Placing Order...
+                        </>
+                      ) : (
+                        `Place Order — ₹${product.sellingPrice * qty}`
+                      )}
                     </button>
                   </div>
                 </motion.form>
@@ -530,16 +569,19 @@ const ProductDetailsModal = ({ productId, onClose }) => {
 };
 
 const OurSweets = () => {
+  const dispatch = useDispatch();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedProductId, setSelectedProductId] = useState(null);
 
   // Fetch products and categories
-  const { data: prodResponse, isLoading: prodsLoading } = useGetProductsPublicQuery();
-  const products = prodResponse?.data || [];
+  const { products = [], isLoading: prodsLoading } = useSelector((state) => state.product);
+  const { categories = [], isLoading: catsLoading } = useSelector((state) => state.category);
 
-  const { data: catResponse, isLoading: catsLoading } = useGetCategoriesPublicQuery();
-  const categories = catResponse?.data || [];
+  useEffect(() => {
+    dispatch(getProductsPublic());
+    dispatch(getCategoriesPublic());
+  }, [dispatch]);
 
   // Filter products by search query and category
   const filteredProducts = useMemo(() => {
@@ -577,7 +619,7 @@ const OurSweets = () => {
             transition={{ duration: 0.4 }}
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FAF6F0] border border-[#E6CCB2]/40 text-xs font-bold text-[#a65827] uppercase tracking-wider"
           >
-            <ChefHat size={14} /> Our Sweet Heritage
+            <ChefHat size={14} /> Our Heritage
           </motion.div>
           <motion.h1
             initial={{ opacity: 0 }}
@@ -605,7 +647,7 @@ const OurSweets = () => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search sweets by name..."
+              placeholder="Search items by name..."
               className="w-full pl-10 pr-10 py-2.5 bg-[#FAF6F0]/40 border border-[#E6CCB2]/40 rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#a65827] text-xs text-slate-700 placeholder-slate-400"
             />
             {search && (

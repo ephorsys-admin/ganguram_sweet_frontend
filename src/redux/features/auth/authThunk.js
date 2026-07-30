@@ -14,6 +14,7 @@ export const loginUser = createAsyncThunk(
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(credentials),
       });
 
@@ -44,13 +45,27 @@ export const getProfile = createAsyncThunk(
         },
       });
 
-      // Handle transparent re-authentication if token expired (401)
-      if (response.status === 401) {
+      // Handle transparent re-authentication if token expired (401 or 500 with JWT error)
+      let shouldRefresh = response.status === 401;
+      if (response.status === 500) {
+        try {
+          const responseClone = response.clone();
+          const errorData = await responseClone.json();
+          if (errorData && (errorData.message === "jwt expired" || errorData.message?.toLowerCase().includes("jwt"))) {
+            shouldRefresh = true;
+          }
+        } catch (e) {
+          // Ignore parsing error
+        }
+      }
+
+      if (shouldRefresh) {
         const refreshResponse = await fetch(`${BASE_URL}/admin/refresh-token`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
+          credentials: "include",
         });
 
         if (refreshResponse.ok) {

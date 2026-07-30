@@ -86,6 +86,7 @@ const ProductDetails = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [qty, setQty] = useState(1);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
   const [coords, setCoords] = useState(null);
   const [form, setForm] = useState({
@@ -205,25 +206,52 @@ const ProductDetails = () => {
   const validate = () => {
     const errs = {};
     if (!form.name.trim()) errs.name = "Name is required";
-    if (!form.email.trim()) errs.email = "Email is required";
-    else if (!/^\S+@\S+\.\S+$/.test(form.email)) errs.email = "Enter a valid email";
+    if (form.email.trim() && !/^\S+@\S+\.\S+$/.test(form.email)) errs.email = "Enter a valid email";
     if (!form.phone.trim()) errs.phone = "Phone number is required";
     else if (!/^\d{10}$/.test(form.phone.replace(/\D/g, "")))
       errs.phone = "Enter a valid 10-digit number";
     if (!form.address.trim()) errs.address = "Delivery address is required";
+    else if (form.address.trim().length < 10) errs.address = "Address must be at least 10 characters";
     return errs;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
-    // TODO: replace with your real order API call
-    // await fetch("/api/orders", { method: "POST", body: JSON.stringify({ productId: product._id, qty, ...form }) })
-    console.log("Order submitted:", { productId: product._id, qty, ...form });
-    setSubmitted(true);
+    setSubmitting(true);
+    const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5501/api/v1";
+
+    try {
+      const response = await fetch(`${BASE_URL}/order/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          product: product._id,
+          quantity: qty,
+          customerName: form.name.trim(),
+          customerEmail: form.email.trim(),
+          customerMobile: form.phone.trim(),
+          deliveryAddress: form.address.trim(),
+          specialInstructions: form.notes.trim(),
+        }),
+      });
+
+      const resData = await response.json();
+      if (!response.ok) {
+        alert(resData.message || "Failed to place order. Please try again.");
+      } else {
+        setSubmitted(true);
+      }
+    } catch (err) {
+      alert("Something went wrong while placing your order. Please check your connection.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -587,12 +615,19 @@ const ProductDetails = () => {
                 <div className="sm:col-span-2">
                   <motion.button
                     type="submit"
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full rounded-lg py-3 text-sm font-bold text-white shadow-sm"
+                    disabled={submitting}
+                    whileHover={{ scale: submitting ? 1 : 1.01 }}
+                    whileTap={{ scale: submitting ? 1 : 0.98 }}
+                    className="w-full rounded-lg py-3 text-sm font-bold text-white shadow-sm flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
                     style={{ backgroundColor: "#8A2E2E" }}
                   >
-                    Place Order — ₹{product.sellingPrice * qty}
+                    {submitting ? (
+                      <>
+                        <Loader2 className="animate-spin h-4 w-4" /> Placing Order...
+                      </>
+                    ) : (
+                      `Place Order — ₹${product.sellingPrice * qty}`
+                    )}
                   </motion.button>
                 </div>
               </motion.form>

@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { useGetCategoriesPublicQuery } from "../../redux/services/adminApi";
+import { useDispatch, useSelector } from "react-redux";
+import { getCategoriesPublic } from "../../redux/features/category/categoryThunk";
 import { Layers, Loader2 } from "lucide-react";
 
 const GRADIENTS = [
@@ -15,8 +17,12 @@ const GRADIENTS = [
 
 const ShopByCategory = () => {
   const navigate = useNavigate();
-  const { data: response, isLoading } = useGetCategoriesPublicQuery();
-  const categories = response?.data || [];
+  const dispatch = useDispatch();
+  const { categories = [], isLoading } = useSelector((state) => state.category);
+
+  useEffect(() => {
+    dispatch(getCategoriesPublic());
+  }, [dispatch]);
 
   return (
     <section className="w-full" style={{ backgroundColor: "#FFFDF8" }}>
