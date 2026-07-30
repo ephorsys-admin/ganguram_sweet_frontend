@@ -34,7 +34,7 @@ export const ToastProvider = ({ children }) => {
       {children}
       
       {/* Toast Notification Container */}
-      <div className="fixed top-5 right-5 z-[9999] pointer-events-none flex flex-col gap-3 max-w-sm w-full font-sans">
+      <div className="fixed top-5 right-5 left-5 md:left-auto z-[9999] pointer-events-none flex flex-col gap-3 max-w-md md:max-w-sm font-sans mx-auto md:mx-0">
         <AnimatePresence>
           {toasts.map((t) => (
             <motion.div

@@ -1,0 +1,291 @@
+import { Calendar, Eye, Download, Receipt, ChevronRight } from "lucide-react";
+import { useState } from "react";
+
+export default function BillingTable({
+  bills = [],
+  pagination,
+  setPage,
+  onViewDetails,
+  search,
+  statusFilter,
+}) {
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const displayPrice = (val) => {
+    return typeof val === "number" ? val.toFixed(2) : Number(val || 0).toFixed(2);
+  };
+
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "Paid":
+        return "bg-emerald-50 text-emerald-700 border-emerald-100";
+      case "Generated":
+        return "bg-blue-50 text-blue-700 border-blue-100";
+      case "Cancelled":
+      default:
+        return "bg-slate-50 text-slate-500 border-slate-200";
+    }
+  };
+
+  const sanitizeFileName = (name) => {
+    return name
+      .trim()
+      .replace(/[^a-zA-Z0-9\s-]/g, "")
+      .replace(/\s+/g, "_");
+  };
+
+  const handleDownloadPdf = async (bill) => {
+    const url = bill?.invoiceUrl;
+
+    if (!url) {
+      alert("Invoice PDF is not available for this bill yet.");
+      return;
+    }
+
+    try {
+      setDownloadingId(bill._id);
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch PDF: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const cleanName = bill.customerName
+        ? sanitizeFileName(bill.customerName)
+        : bill.invoiceNumber;
+
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `Invoice_${cleanName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error("PDF download failed", err);
+      // Fallback
+      window.open(url, "_blank", "noopener,noreferrer");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  return (
+    <div className="w-full space-y-4">
+      {bills.length === 0 ? (
+        <div className="bg-white border border-[#E6CCB2]/30 rounded-3xl p-12 text-center flex flex-col items-center justify-center shadow-xs">
+          <div className="w-16 h-16 bg-[#FAF6F0] rounded-2xl flex items-center justify-center text-[#DFA250] mb-4 border border-[#E6CCB2]/20">
+            <Receipt className="w-8 h-8" />
+          </div>
+          <h3 className="font-extrabold text-[#3D271B] text-lg">No Bills Found</h3>
+          <p className="text-xs text-[#6E5A4F] max-w-sm mt-1">
+            {search || statusFilter !== "All"
+              ? "We couldn't find any bills matching your search or filters. Try modifying your inputs."
+              : "Generate a new bill request for sweet orders or walk-in purchases."}
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* ========================================================== */}
+          {/* Mobile Card Grid View (Shown below 1024px lg viewport)     */}
+          {/* ========================================================== */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 lg:hidden">
+            {bills.map((bill) => {
+              const dateStr = bill.generatedAt || bill.createdAt
+                ? new Date(bill.generatedAt || bill.createdAt).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric"
+                  })
+                : "—";
+
+              return (
+                <div 
+                  key={bill._id} 
+                  className="bg-white p-5 rounded-3xl border border-[#E6CCB2]/20 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between gap-4"
+                >
+                  {/* Card Header: Invoice No & Bill Type */}
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold font-mono text-[#a65827] bg-[#FAF6F0] px-2.5 py-1 rounded-lg text-[10px] tracking-wider uppercase">
+                      {bill.invoiceNumber || `ID: ${bill._id.substring(18)}`}
+                    </span>
+                    <span className="inline-flex px-2 py-0.5 bg-[#FAF6F0] border border-[#E6CCB2]/30 rounded-md text-[9px] text-[#6E5A4F] font-bold uppercase tracking-wide">
+                      {bill.billType}
+                    </span>
+                  </div>
+
+                  {/* Main Content: Customer & Price info */}
+                  <div className="space-y-3">
+                    <div className="space-y-0.5">
+                      <h4 className="font-extrabold text-sm sm:text-base text-[#3D271B] leading-tight">
+                        {bill.customerName}
+                      </h4>
+                      <p className="text-[10px] text-[#6E5A4F]/70 font-semibold font-mono">
+                        Phone: {bill.mobile}
+                      </p>
+                    </div>
+
+                    <div className="flex justify-between items-center text-[11px] font-semibold border-t border-[#FAF6F0] pt-2">
+                      <span className="text-[#6E5A4F]">Date:</span>
+                      <span className="text-[#3D271B] font-mono">{dateStr}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px] font-semibold">
+                      <span className="text-[#6E5A4F]">Final Amount:</span>
+                      <span className="text-[#a65827] font-mono text-sm font-bold">₹{bill.finalAmount}</span>
+                    </div>
+                  </div>
+
+                  {/* Card Footer: Status & Actions */}
+                  <div className="flex items-center justify-between border-t border-[#FAF6F0] pt-3 gap-2">
+                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusStyle(bill.status)}`}>
+                      {bill.status}
+                    </span>
+
+                    <div className="flex items-center gap-1.5">
+                      <button 
+                        onClick={() => onViewDetails(bill)}
+                        className="p-2 text-[#a65827] hover:text-[#3D271B] bg-[#FAF6F0] rounded-xl transition cursor-pointer"
+                        title="View Details"
+                      >
+                        <Eye size={14} />
+                      </button>
+                      <button 
+                        onClick={() => handleDownloadPdf(bill)}
+                        disabled={downloadingId === bill._id}
+                        className="p-2 text-emerald-650 hover:text-emerald-700 bg-emerald-50 border border-transparent rounded-xl transition cursor-pointer disabled:opacity-50"
+                        title="Download PDF Invoice"
+                      >
+                        <Download size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ========================================================== */}
+          {/* Desktop Table View (Shown on lg viewport and above)         */}
+          {/* ========================================================== */}
+          <div className="bg-white rounded-3xl border border-[#E6CCB2]/30 shadow-xs overflow-hidden text-sm hidden lg:block">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1000px] text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#FAF6F0]/50 border-b border-[#E6CCB2]/20 text-xs font-bold uppercase tracking-wider text-[#6E5A4F]">
+                    <th className="px-6 py-4.5">Invoice Info</th>
+                    <th className="px-6 py-4.5">Customer Details</th>
+                    <th className="px-6 py-4.5">Bill Type</th>
+                    <th className="px-6 py-4.5 font-mono text-right">Amount Details</th>
+                    <th className="px-6 py-4.5 text-center">Status</th>
+                    <th className="px-6 py-4.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#FAF6F0] text-sm font-semibold text-[#3D271B]">
+                  {bills.map((bill) => (
+                    <tr key={bill._id} className="hover:bg-[#FAF6F0]/15 transition-colors">
+                      {/* Invoice Info */}
+                      <td className="px-6 py-4">
+                        <div className="font-extrabold text-[#a65827] select-all font-mono">
+                          {bill.invoiceNumber || bill._id.substring(18)}
+                        </div>
+                        <div className="text-[10px] text-[#6E5A4F]/60 font-medium mt-1 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-[#a65827]" />
+                          {bill.generatedAt
+                            ? new Date(bill.generatedAt).toLocaleDateString()
+                            : new Date(bill.createdAt).toLocaleDateString()}
+                        </div>
+                      </td>
+
+                      {/* Customer Details */}
+                      <td className="px-6 py-4">
+                        <div className="font-bold text-[#3D271B]">{bill.customerName}</div>
+                        <div className="text-xs text-[#6E5A4F]/70 font-mono mt-1">
+                          {bill.mobile || "No Mobile"}
+                        </div>
+                      </td>
+
+                      {/* Bill Type */}
+                      <td className="px-6 py-4">
+                        <span className="inline-flex px-2 py-0.5 bg-[#FAF6F0] border border-[#E6CCB2]/30 rounded-md text-[10px] text-[#6E5A4F] font-bold uppercase">
+                          {bill.billType}
+                        </span>
+                      </td>
+
+                      {/* Amount Details */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="font-extrabold text-[#3D271B] font-mono">
+                          ₹{displayPrice(bill.finalAmount)}
+                        </div>
+                        <div className="text-[10px] text-[#6E5A4F]/60 mt-1 font-mono">
+                          Subtotal: ₹{displayPrice(bill.subTotal)} | Discount: ₹{displayPrice(bill.discountAmount)}
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center">
+                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusStyle(bill.status)}`}>
+                            {bill.status}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => onViewDetails(bill)}
+                            className="p-2 text-[#a65827] hover:text-[#3D271B] hover:bg-[#FAF6F0] border border-transparent rounded-xl transition cursor-pointer"
+                            title="View Receipt Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDownloadPdf(bill)}
+                            disabled={downloadingId === bill._id}
+                            className="p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent rounded-xl transition cursor-pointer disabled:opacity-50"
+                            title="Download PDF Invoice"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="px-6 py-4 bg-white border border-[#E6CCB2]/30 rounded-3xl flex items-center justify-between shadow-xs">
+          <span className="text-xs text-[#6E5A4F]/60 font-bold">
+            Showing Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setPage((p) => Math.max(p - 1, 1))}
+              disabled={pagination.page <= 1}
+              className="px-3 py-1.5 text-xs font-bold border border-[#E6CCB2]/30 rounded-lg bg-white text-[#3D271B] hover:bg-[#FAF6F0]/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(p + 1, pagination.totalPages))}
+              disabled={pagination.page >= pagination.totalPages}
+              className="px-3 py-1.5 text-xs font-bold border border-[#E6CCB2]/30 rounded-lg bg-white text-[#3D271B] hover:bg-[#FAF6F0]/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
