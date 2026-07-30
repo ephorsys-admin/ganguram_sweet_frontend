@@ -15,59 +15,8 @@ import {
 import { useGetProductDetailsPublicQuery } from "../../redux/services/adminApi";
 import LocationPicker from "./LocationPicker";
 
-/**
- * STATIC / DUMMY DATA — shaped exactly like the API response you shared.
- * Once your backend route is ready, replace this with a fetch:
- *
- *   const { slug } = useParams();
- *   const [product, setProduct] = useState(null);
- *   useEffect(() => {
- *     fetch(`/api/products/${slug}`)
- *       .then((res) => res.json())
- *       .then((res) => setProduct(res.data));
- *   }, [slug]);
- */
-const STATIC_PRODUCT = {
-  _id: "6a684083e60c11e504871645",
-  name: "Kaju Katli2",
-  category: {
-    _id: "6a6469091aecf602e0714970",
-    name: "Bengali Sweets",
-    slug: "bengali-sweets",
-  },
-  shortDescription: "Premium Kaju Katli",
-  description: "Made with pure cashews",
-  images: [
-    {
-      url: "https://res.cloudinary.com/dpzocdvr3/image/upload/v1785217155/products/xczcl8p00ul3rnmzizif.png",
-      publicId: "products/xczcl8p00ul3rnmzizif",
-      _id: "6a684083e60c11e504871646",
-    },
-    {
-      url: "https://res.cloudinary.com/dpzocdvr3/image/upload/v1785217156/products/wlshtj5dzzv5ljsd7sx0.png",
-      publicId: "products/wlshtj5dzzv5ljsd7sx0",
-      _id: "6a684083e60c11e504871647",
-    },
-  ],
-  mrp: 600,
-  sellingPrice: 550,
-  stock: 100,
-  unit: "Box",
-  status: true,
-  isAvailable: true,
-  isFeatured: true,
-  isTrending: false,
-  isBestSeller: false,
-  isNewArrival: false,
-  homeDelivery: true,
-  allowInquiry: true,
-  averageRating: 0,
-  totalReviews: 0,
-  createdAt: "2026-07-28T05:39:15.610Z",
-  updatedAt: "2026-07-28T05:39:15.610Z",
-  slug: "kaju-katli2",
-  __v: 0,
-};
+
+
 
 const BADGES = [
   { key: "isBestSeller", label: "Bestseller", color: "#8A2E2E" },
@@ -581,7 +530,7 @@ const ProductDetails = () => {
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="h-[150px] md:h-auto min-h-[150px] rounded-lg overflow-hidden border border-[#E8C68A] relative shadow-xs"
+                        className="h-37.5 md:h-auto min-h-37.5 rounded-lg overflow-hidden border border-[#E8C68A] relative shadow-xs"
                       >
                         <LocationPicker
                           coords={coords}

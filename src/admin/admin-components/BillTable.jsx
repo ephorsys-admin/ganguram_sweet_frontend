@@ -56,11 +56,11 @@ const BillTable = ({ bills, onViewDetails }) => {
 
                 <div className="flex justify-between items-center text-[11px] font-semibold border-t border-[#FAF6F0] pt-2">
                   <span className="text-[#6E5A4F]">Date:</span>
-                  <span className="text-[#3D271B] font-mono">{dateStr}</span>
+                  <span className="text-brand-dark font-mono">{dateStr}</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] font-semibold">
                   <span className="text-[#6E5A4F]">Final Amount:</span>
-                  <span className="text-[#a65827] font-mono text-sm font-bold">₹{bill.finalAmount}</span>
+                  <span className="text-brand-copper font-mono text-sm font-bold">₹{bill.finalAmount}</span>
                 </div>
               </div>
 

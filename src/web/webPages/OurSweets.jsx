@@ -1,23 +1,103 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ChefHat, 
-  Search, 
-  X, 
-  Loader2, 
-  Star, 
-  Minus, 
-  Plus, 
-  Truck, 
-  ShieldCheck, 
+import {
+  ChefHat,
+  Search,
+  X,
+  Loader2,
+  Star,
+  Minus,
+  Plus,
+  Truck,
+  ShieldCheck,
   CheckCircle2,
-  MapPin 
+  MapPin,
+  AlertCircle,
 } from "lucide-react";
 import ProductCard from "../web-components/Productcard";
 import LocationPicker from "../web-components/LocationPicker";
 import { useDispatch, useSelector } from "react-redux";
 import { getCategoriesPublic } from "../../redux/features/category/categoryThunk";
 import { getProductsPublic, getProductById } from "../../redux/features/product/productThunk";
+
+/* =========================================================
+   STORE LOCATION + DISTANCE + DELIVERY CHARGE UTILITIES
+   ========================================================= */
+
+// 🏪 Apni shop ka fixed lat/lon yahan daalo
+const STORE_LOCATION = {
+  lat: 20.280948, // TODO: replace with actual store latitude
+  lon: 85.798344, // TODO: replace with actual store longitude
+};
+
+// Haversine formula — do lat/lon points ke beech ka distance (km) nikalta hai
+function getDistanceInKm(lat1, lon1, lat2, lon2) {
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const R = 6371; // Earth radius in km
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+// 🚚 Distance ke hisaab se delivery charge slabs
+// return null => delivery range se bahar (order allow nahi karna)
+function calculateDeliveryCharge(distanceKm) {
+  if (distanceKm <= 2) return 0; // free delivery
+  if (distanceKm <= 5) return 20;
+  if (distanceKm <= 10) return 40;
+  if (distanceKm <= 15) return 60;
+  return null; // out of delivery range
+}
+
+/* =========================================================
+   ADDRESS AUTOCOMPLETE HOOK (Nominatim /search)
+   ========================================================= */
+
+function useAddressSearch() {
+  const [suggestions, setSuggestions] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef(null);
+
+  const searchAddress = useCallback((query) => {
+    clearTimeout(debounceRef.current);
+
+    if (!query || query.trim().length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&countrycodes=in&q=${encodeURIComponent(
+            query
+          )}`
+        );
+        const data = await response.json();
+        setSuggestions(data || []);
+      } catch (err) {
+        console.error("Address search error:", err);
+        setSuggestions([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 400);
+  }, []);
+
+  return { suggestions, searching, searchAddress, setSuggestions };
+}
+
+/* =========================================================
+   PRODUCT DETAILS MODAL
+   ========================================================= */
 
 const ProductDetailsModal = ({ productId, onClose }) => {
   const dispatch = useDispatch();
@@ -35,6 +115,7 @@ const ProductDetailsModal = ({ productId, onClose }) => {
   const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
   const [coords, setCoords] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -43,6 +124,38 @@ const ProductDetailsModal = ({ productId, onClose }) => {
     notes: "",
   });
   const [errors, setErrors] = useState({});
+
+  const { suggestions, searching, searchAddress, setSuggestions } = useAddressSearch();
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".address-search-wrapper")) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  /* ---------------- Distance & Delivery Charge ---------------- */
+
+  const distanceKm = useMemo(() => {
+    if (!coords) return null;
+    return getDistanceInKm(STORE_LOCATION.lat, STORE_LOCATION.lon, coords.lat, coords.lon);
+  }, [coords]);
+
+  const deliveryCharge = useMemo(() => {
+    if (distanceKm === null) return 0;
+    return calculateDeliveryCharge(distanceKm);
+  }, [distanceKm]);
+
+  const outOfRange = coords !== null && deliveryCharge === null;
+
+  const itemsTotal = (product?.sellingPrice || 0) * qty;
+  const grandTotal = itemsTotal + (deliveryCharge || 0);
+
+  /* ---------------- Current Location Button ---------------- */
 
   const handleLocateUser = () => {
     if (!navigator.geolocation) {
@@ -61,24 +174,21 @@ const ProductDetailsModal = ({ productId, onClose }) => {
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
           );
           const data = await response.json();
-          
+
           if (data && data.display_name) {
-            setForm((prev) => ({
-              ...prev,
-              address: data.display_name
-            }));
+            setForm((prev) => ({ ...prev, address: data.display_name }));
             setErrors((prev) => ({ ...prev, address: "" }));
           } else {
             setForm((prev) => ({
               ...prev,
-              address: `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`
+              address: `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`,
             }));
           }
         } catch (error) {
           console.error("Reverse geocoding error:", error);
           setForm((prev) => ({
             ...prev,
-            address: `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`
+            address: `Lat: ${latitude.toFixed(6)}, Lon: ${longitude.toFixed(6)}`,
           }));
         } finally {
           setLocating(false);
@@ -93,6 +203,8 @@ const ProductDetailsModal = ({ productId, onClose }) => {
     );
   };
 
+  /* ---------------- Map Drag / Pick Location ---------------- */
+
   const handleLocationChange = async (lat, lon) => {
     setCoords({ lat, lon });
     try {
@@ -101,10 +213,7 @@ const ProductDetailsModal = ({ productId, onClose }) => {
       );
       const data = await response.json();
       if (data && data.display_name) {
-        setForm((prev) => ({ 
-          ...prev, 
-          address: data.display_name 
-        }));
+        setForm((prev) => ({ ...prev, address: data.display_name }));
         setErrors((prev) => ({ ...prev, address: "" }));
       }
     } catch (error) {
@@ -112,12 +221,32 @@ const ProductDetailsModal = ({ productId, onClose }) => {
     }
   };
 
+  /* ---------------- Address Autocomplete (Search-as-you-type) ---------------- */
+
+  const handleAddressInput = (e) => {
+    const value = e.target.value;
+    setForm((prev) => ({ ...prev, address: value }));
+    setCoords(null); // jab tak suggestion select nahi hota, coords clear
+    setShowDropdown(true);
+    searchAddress(value);
+    if (errors.address) setErrors((prev) => ({ ...prev, address: "" }));
+  };
+
+  const handleSelectSuggestion = (place) => {
+    setForm((prev) => ({ ...prev, address: place.display_name }));
+    setCoords({ lat: parseFloat(place.lat), lon: parseFloat(place.lon) });
+    setSuggestions([]);
+    setShowDropdown(false);
+    setErrors((prev) => ({ ...prev, address: "" }));
+  };
+
+  /* ---------------- Other field changes ---------------- */
+
   const handleChange = (field) => (e) => {
     setForm((f) => ({ ...f, [field]: e.target.value }));
-    if (field === "address" && !e.target.value.trim()) {
-      setCoords(null);
-    }
   };
+
+  /* ---------------- Validation ---------------- */
 
   const validate = () => {
     const errs = {};
@@ -128,8 +257,12 @@ const ProductDetailsModal = ({ productId, onClose }) => {
       errs.phone = "Enter a valid 10-digit number";
     if (!form.address.trim()) errs.address = "Delivery address is required";
     else if (form.address.trim().length < 10) errs.address = "Address must be at least 10 characters";
+    else if (!coords) errs.address = "Please select an address from the suggestions list";
+    else if (outOfRange) errs.address = "Sorry, we don't deliver to this location";
     return errs;
   };
+
+  /* ---------------- Submit ---------------- */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -154,6 +287,12 @@ const ProductDetailsModal = ({ productId, onClose }) => {
           customerMobile: form.phone.trim(),
           deliveryAddress: form.address.trim(),
           specialInstructions: form.notes.trim(),
+          deliveryLat: coords?.lat,
+          deliveryLon: coords?.lon,
+          distanceKm: distanceKm ? Number(distanceKm.toFixed(2)) : null,
+          deliveryCharge: deliveryCharge || 0,
+          itemsTotal,
+          grandTotal,
         }),
       });
 
@@ -196,7 +335,7 @@ const ProductDetailsModal = ({ productId, onClose }) => {
     );
   }
 
-  const discount = product.mrp && product.sellingPrice 
+  const discount = product.mrp && product.sellingPrice
     ? Math.round(((product.mrp - product.sellingPrice) / product.mrp) * 100)
     : 0;
 
@@ -382,9 +521,7 @@ const ProductDetailsModal = ({ productId, onClose }) => {
           </div>
 
           {/* Order Form */}
-          <div
-            className="mt-8 rounded-2xl border p-5 sm:p-8 bg-white border-[#F0E4CC]"
-          >
+          <div className="mt-8 rounded-2xl border p-5 sm:p-8 bg-white border-[#F0E4CC]">
             <h2 className="text-xl font-bold" style={{ color: "#3D1F12" }}>
               Place Your Order Inquiry
             </h2>
@@ -430,9 +567,7 @@ const ProductDetailsModal = ({ productId, onClose }) => {
                       style={{ borderColor: errors.name ? "#8A2E2E" : "#E8C68A" }}
                     />
                     {errors.name && (
-                      <p className="mt-1 text-xs font-semibold text-[#8A2E2E]">
-                        {errors.name}
-                      </p>
+                      <p className="mt-1 text-xs font-semibold text-[#8A2E2E]">{errors.name}</p>
                     )}
                   </div>
 
@@ -449,9 +584,7 @@ const ProductDetailsModal = ({ productId, onClose }) => {
                       style={{ borderColor: errors.email ? "#8A2E2E" : "#E8C68A" }}
                     />
                     {errors.email && (
-                      <p className="mt-1 text-xs font-semibold text-[#8A2E2E]">
-                        {errors.email}
-                      </p>
+                      <p className="mt-1 text-xs font-semibold text-[#8A2E2E]">{errors.email}</p>
                     )}
                   </div>
 
@@ -468,12 +601,11 @@ const ProductDetailsModal = ({ productId, onClose }) => {
                       style={{ borderColor: errors.phone ? "#8A2E2E" : "#E8C68A" }}
                     />
                     {errors.phone && (
-                      <p className="mt-1 text-xs font-semibold text-[#8A2E2E]">
-                        {errors.phone}
-                      </p>
+                      <p className="mt-1 text-xs font-semibold text-[#8A2E2E]">{errors.phone}</p>
                     )}
                   </div>
 
+                  {/* ---------------- Address with Autocomplete ---------------- */}
                   <div className="sm:col-span-2">
                     <div className="flex justify-between items-center mb-1">
                       <label className="block text-xs font-bold text-[#5C2A1A]">
@@ -500,34 +632,77 @@ const ProductDetailsModal = ({ productId, onClose }) => {
                     </div>
 
                     <div className={`grid grid-cols-1 ${coords ? "md:grid-cols-2" : ""} gap-4`}>
-                      <div>
+                      <div className="relative address-search-wrapper">
                         <input
                           type="text"
                           value={form.address}
-                          onChange={handleChange("address")}
-                          placeholder="Street address, city"
+                          onChange={handleAddressInput}
+                          onFocus={() => setShowDropdown(true)}
+                          placeholder="Search address or landmark..."
+                          autoComplete="off"
                           className="w-full rounded-lg border border-[#E8C68A] px-3 py-2 text-sm outline-none bg-white focus:ring-1 focus:ring-[#8A2E2E] font-sans"
                           style={{ borderColor: errors.address ? "#8A2E2E" : "#E8C68A" }}
                         />
+
+                        {searching && (
+                          <Loader2
+                            size={14}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#8A2E2E]"
+                          />
+                        )}
+
+                        {showDropdown && suggestions.length > 0 && (
+                          <div className="absolute z-30 mt-1 w-full bg-white border border-[#E8C68A] rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            {suggestions.map((place) => (
+                              <button
+                                type="button"
+                                key={place.place_id}
+                                onClick={() => handleSelectSuggestion(place)}
+                                className="w-full text-left px-3 py-2 text-xs hover:bg-[#FAF6F0] border-b border-[#F0E4CC] last:border-0 flex items-start gap-2 cursor-pointer"
+                              >
+                                <MapPin size={14} className="mt-0.5 flex-shrink-0 text-[#8A2E2E]" />
+                                <span className="text-[#3D1F12]">{place.display_name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
+
                       {coords && (
                         <motion.div
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                           className="h-[150px] rounded-lg overflow-hidden border border-[#E8C68A] relative shadow-xs bg-white"
                         >
-                          <LocationPicker
-                            coords={coords}
-                            onLocationChange={handleLocationChange}
-                          />
+                          <LocationPicker coords={coords} onLocationChange={handleLocationChange} />
                         </motion.div>
                       )}
                     </div>
 
                     {errors.address && (
-                      <p className="mt-1 text-xs font-semibold text-[#8A2E2E]">
-                        {errors.address}
+                      <p className="mt-1 text-xs font-semibold text-[#8A2E2E] flex items-center gap-1">
+                        <AlertCircle size={12} /> {errors.address}
                       </p>
+                    )}
+
+                    {/* Distance & Delivery Charge Info */}
+                    {coords && distanceKm !== null && (
+                      <div
+                        className="mt-2 rounded-lg px-3 py-2 text-xs font-semibold flex items-center justify-between"
+                        style={{
+                          backgroundColor: outOfRange ? "#FBEAEA" : "#F1F8F0",
+                          color: outOfRange ? "#8A2E2E" : "#2E8B3D",
+                        }}
+                      >
+                        <span>Distance from store: {distanceKm.toFixed(1)} km</span>
+                        {outOfRange ? (
+                          <span>Outside delivery range</span>
+                        ) : deliveryCharge === 0 ? (
+                          <span>Free Delivery 🎉</span>
+                        ) : (
+                          <span>Delivery Charge: ₹{deliveryCharge}</span>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -543,10 +718,28 @@ const ProductDetailsModal = ({ productId, onClose }) => {
                     />
                   </div>
 
+                  {/* Price Summary */}
+                  <div className="sm:col-span-2 rounded-lg bg-[#FAF6F0] px-4 py-3 text-sm text-[#3D1F12] space-y-1">
+                    <div className="flex justify-between">
+                      <span>Items Total</span>
+                      <span className="font-semibold">₹{itemsTotal}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Delivery Charge</span>
+                      <span className="font-semibold">
+                        {coords ? `₹${deliveryCharge || 0}` : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-t border-[#E6CCB2]/50 pt-1 mt-1 font-bold">
+                      <span>Grand Total</span>
+                      <span>₹{grandTotal}</span>
+                    </div>
+                  </div>
+
                   <div className="sm:col-span-2">
                     <button
                       type="submit"
-                      disabled={submitting}
+                      disabled={submitting || outOfRange}
                       className="w-full bg-[#8A2E2E] hover:bg-[#5C2A1A] text-white font-bold py-3 px-6 rounded-lg text-sm transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
                     >
                       {submitting ? (
@@ -554,7 +747,7 @@ const ProductDetailsModal = ({ productId, onClose }) => {
                           <Loader2 className="animate-spin h-4 w-4" /> Placing Order...
                         </>
                       ) : (
-                        `Place Order — ₹${product.sellingPrice * qty}`
+                        `Place Order — ₹${grandTotal}`
                       )}
                     </button>
                   </div>
@@ -568,13 +761,16 @@ const ProductDetailsModal = ({ productId, onClose }) => {
   );
 };
 
+/* =========================================================
+   OUR SWEETS (unchanged from original, listing page)
+   ========================================================= */
+
 const OurSweets = () => {
   const dispatch = useDispatch();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedProductId, setSelectedProductId] = useState(null);
 
-  // Fetch products and categories
   const { products = [], isLoading: prodsLoading } = useSelector((state) => state.product);
   const { categories = [], isLoading: catsLoading } = useSelector((state) => state.category);
 
@@ -583,7 +779,6 @@ const OurSweets = () => {
     dispatch(getCategoriesPublic());
   }, [dispatch]);
 
-  // Filter products by search query and category
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase().trim());
@@ -599,19 +794,11 @@ const OurSweets = () => {
   return (
     <div className="w-full min-h-screen" style={{ backgroundColor: "#FFFDF8" }}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8">
-        
-        {/* Style to hide horizontal scrollbar nicely */}
         <style>{`
-          .scrollbar-none::-webkit-scrollbar {
-            display: none;
-          }
-          .scrollbar-none {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-          }
+          .scrollbar-none::-webkit-scrollbar { display: none; }
+          .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
         `}</style>
 
-        {/* Title Banner */}
         <div className="text-center space-y-2">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -639,7 +826,6 @@ const OurSweets = () => {
           </motion.p>
         </div>
 
-        {/* Search Bar Container */}
         <div className="max-w-xl mx-auto bg-white p-3.5 rounded-3xl border border-[#E6CCB2]/30 shadow-xs">
           <div className="relative w-full">
             <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -661,35 +847,30 @@ const OurSweets = () => {
           </div>
         </div>
 
-        {/* Horizontal Category Circular Filters */}
         <div className="w-full py-4 border-b border-[#E6CCB2]/20">
           <div className="flex items-center gap-6 overflow-x-auto pb-3 pt-1 justify-start md:justify-center px-4 scrollbar-none">
-            {/* "All Items" circular bubble */}
             <button
               onClick={() => setSelectedCategory("All")}
               className="flex flex-col items-center flex-shrink-0 focus:outline-none cursor-pointer group"
             >
-              <div 
-                className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 flex items-center justify-center overflow-hidden transition-all duration-300 bg-white ${
-                  selectedCategory === "All" 
-                    ? "border-[#a65827] shadow-md ring-2 ring-[#a65827]/15 scale-105" 
-                    : "border-[#E6CCB2]/40 hover:border-[#a65827]/50"
-                }`}
+              <div
+                className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 flex items-center justify-center overflow-hidden transition-all duration-300 bg-white ${selectedCategory === "All"
+                  ? "border-[#a65827] shadow-md ring-2 ring-[#a65827]/15 scale-105"
+                  : "border-[#E6CCB2]/40 hover:border-[#a65827]/50"
+                  }`}
               >
-                <img 
-                  src="/Mylogo/logo.png" 
-                  className="w-12 h-12 object-contain group-hover:scale-110 transition duration-300" 
-                  alt="All Items" 
+                <img
+                  src="/Mylogo/logo.png"
+                  className="w-12 h-12 object-contain group-hover:scale-110 transition duration-300"
+                  alt="All Items"
                 />
               </div>
-              <span className={`text-[11px] sm:text-xs font-bold mt-2 transition-colors duration-300 ${
-                selectedCategory === "All" ? "text-[#a65827]" : "text-[#5C2A1A]"
-              }`}>
+              <span className={`text-[11px] sm:text-xs font-bold mt-2 transition-colors duration-300 ${selectedCategory === "All" ? "text-[#a65827]" : "text-[#5C2A1A]"
+                }`}>
                 All Items
               </span>
             </button>
 
-            {/* Dynamic categories circular bubbles */}
             {categories.map((cat) => {
               const isSelected = selectedCategory === cat._id;
               return (
@@ -698,22 +879,20 @@ const OurSweets = () => {
                   onClick={() => setSelectedCategory(cat._id)}
                   className="flex flex-col items-center flex-shrink-0 focus:outline-none cursor-pointer group"
                 >
-                  <div 
-                    className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 flex items-center justify-center overflow-hidden transition-all duration-300 bg-white ${
-                      isSelected 
-                        ? "border-[#a65827] shadow-md ring-2 ring-[#a65827]/15 scale-105" 
-                        : "border-[#E6CCB2]/40 hover:border-[#a65827]/50"
-                    }`}
+                  <div
+                    className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 flex items-center justify-center overflow-hidden transition-all duration-300 bg-white ${isSelected
+                      ? "border-[#a65827] shadow-md ring-2 ring-[#a65827]/15 scale-105"
+                      : "border-[#E6CCB2]/40 hover:border-[#a65827]/50"
+                      }`}
                   >
-                    <img 
-                      src={cat.image?.url || "/Mylogo/logo.png"} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition duration-300" 
-                      alt={cat.name} 
+                    <img
+                      src={cat.image?.url || "/Mylogo/logo.png"}
+                      className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
+                      alt={cat.name}
                     />
                   </div>
-                  <span className={`text-[11px] sm:text-xs font-bold mt-2 transition-colors duration-300 ${
-                    isSelected ? "text-[#a65827]" : "text-[#5C2A1A]"
-                  }`}>
+                  <span className={`text-[11px] sm:text-xs font-bold mt-2 transition-colors duration-300 ${isSelected ? "text-[#a65827]" : "text-[#5C2A1A]"
+                    }`}>
                     {cat.name}
                   </span>
                 </button>
@@ -722,7 +901,6 @@ const OurSweets = () => {
           </div>
         </div>
 
-        {/* Products Grid */}
         {isLoading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="h-10 w-10 text-[#DFA250] animate-spin" />
@@ -739,17 +917,16 @@ const OurSweets = () => {
             className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4 pt-4"
           >
             {filteredProducts.map((product) => (
-              <ProductCard 
-                key={product._id} 
-                product={product} 
-                onViewDetails={(p) => setSelectedProductId(p._id)} 
+              <ProductCard
+                key={product._id}
+                product={product}
+                onViewDetails={(p) => setSelectedProductId(p._id)}
               />
             ))}
           </motion.div>
         )}
       </div>
 
-      {/* Product Details Inline Modal Dialog */}
       <AnimatePresence>
         {selectedProductId && (
           <ProductDetailsModal
