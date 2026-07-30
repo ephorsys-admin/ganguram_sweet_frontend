@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { ArrowLeft, ClipboardList, Loader2, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { createWalkinBill } from "../../redux/features/bill/billThunk";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { createWalkinBill, createOrderBill } from "../../redux/features/bill/billThunk";
+import { getSingleOrder, updateOrderStatus } from "../../redux/features/order/orderThunk";
 import { getProducts } from "../../redux/features/product/productThunk";
 import { useToast } from "../../context/ToastContext";
 
@@ -10,6 +11,9 @@ const AdminCreateBill = () => {
   const { showToast } = useToast();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const orderId = searchParams.get("orderId");
+  const [orderLoading, setOrderLoading] = useState(false);
 
   // Redux state
   const { products = [] } = useSelector((state) => state.product);
@@ -41,6 +45,43 @@ const AdminCreateBill = () => {
   useEffect(() => {
     dispatch(getProducts());
   }, [dispatch]);
+
+  // Load Order details if orderId parameter is present in URL
+  useEffect(() => {
+    if (orderId) {
+      setOrderLoading(true);
+      dispatch(getSingleOrder(orderId))
+        .unwrap()
+        .then((result) => {
+          if (result.success && result.data) {
+            const order = result.data;
+            setCustomerName(order.customerName || "");
+            setMobile(order.customerMobile || "");
+            setEmail(order.customerEmail || "");
+            setAddress(order.deliveryAddress || "");
+            
+            // Pre-fill item from order details
+            if (order.product) {
+              setItems([
+                {
+                  productId: order.product._id || order.product,
+                  productName: order.productName,
+                  quantity: order.quantity || 1,
+                  price: Number(order.productPrice || 0),
+                  total: Number(order.totalAmount || 0)
+                }
+              ]);
+            }
+          }
+        })
+        .catch((err) => {
+          showToast(err.message || "Failed to load order details", "error");
+        })
+        .finally(() => {
+          setOrderLoading(false);
+        });
+    }
+  }, [orderId, dispatch]);
 
   const handleProductChange = (e) => {
     const prodId = e.target.value;
@@ -144,56 +185,91 @@ const AdminCreateBill = () => {
     if (!validateForm()) return;
 
     try {
-      const resultAction = await dispatch(
-        createWalkinBill({
-          customerName: customerName.trim(),
-          mobile: mobile.trim(),
-          email: email.trim(),
-          whatsappNumber: whatsappNumber.trim(),
-          dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString() : null,
-          address: address.trim(),
-          items: items.map((it) => ({
-            productId: it.productId,
-            productName: it.productName,
-            quantity: it.quantity,
-            price: it.price,
-          })),
-          discountType,
-          discountValue: Number(discountValue),
-        })
-      ).unwrap();
+      const payload = {
+        customerName: customerName.trim(),
+        mobile: mobile.trim(),
+        email: email.trim(),
+        whatsappNumber: whatsappNumber.trim(),
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString() : null,
+        address: address.trim(),
+        items: items.map((it) => ({
+          productId: it.productId,
+          productName: it.productName,
+          quantity: it.quantity,
+          price: it.price,
+        })),
+        discountType,
+        discountValue: Number(discountValue),
+      };
 
-      if (resultAction.success) {
-        showToast("Walk-in bill created successfully!", "success");
-        navigate("/admin/billing");
-        
-        // Open the generated PDF receipt from Cloudinary in a new browser tab
-        if (resultAction.data?.invoiceUrl) {
-          window.open(resultAction.data.invoiceUrl, "_blank");
+      if (orderId) {
+        payload.orderId = orderId;
+        const resultAction = await dispatch(createOrderBill(payload)).unwrap();
+        if (resultAction.success) {
+          showToast("Order bill generated successfully!", "success");
+          
+          // Open the generated PDF receipt from Cloudinary in a new browser tab
+          if (resultAction.data?.invoiceUrl) {
+            window.open(resultAction.data.invoiceUrl, "_blank");
+          }
+
+          // Shift status to Preparing
+          const statusResult = await dispatch(
+            updateOrderStatus({ orderId, orderStatus: "Preparing" })
+          ).unwrap();
+
+          if (statusResult.success) {
+            showToast("Order status shifted to Preparing!", "success");
+          }
+
+          navigate("/admin/orders");
+        }
+      } else {
+        const resultAction = await dispatch(createWalkinBill(payload)).unwrap();
+        if (resultAction.success) {
+          showToast("Walk-in bill created successfully!", "success");
+          navigate("/admin/billing");
+          
+          // Open the generated PDF receipt from Cloudinary in a new browser tab
+          if (resultAction.data?.invoiceUrl) {
+            window.open(resultAction.data.invoiceUrl, "_blank");
+          }
         }
       }
     } catch (err) {
-      showToast(err.message || "Failed to create walk-in bill", "error");
+      showToast(err.message || "Failed to process bill creation", "error");
     }
   };
+
+  if (orderLoading) {
+    return (
+      <div className="bg-white p-12 rounded-3xl border border-[#E6CCB2]/30 shadow-xs flex flex-col items-center justify-center min-h-[50vh] space-y-3">
+        <Loader2 className="h-10 w-10 text-[#DFA250] animate-spin" />
+        <span className="text-xs text-[#6E5A4F] font-semibold">Loading Order details...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 text-xs font-sans max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 pb-2">
         <button
-          onClick={() => navigate("/admin/billing")}
+          type="button"
+          onClick={() => navigate(orderId ? "/admin/orders" : "/admin/billing")}
           className="p-2 hover:bg-white text-[#6E5A4F] hover:text-[#3D271B] border border-[#E6CCB2]/30 rounded-xl transition cursor-pointer"
-          title="Back to Bills"
+          title={orderId ? "Back to Orders" : "Back to Bills"}
         >
           <ArrowLeft size={16} />
         </button>
         <div>
           <h1 className="text-2xl md:text-3xl font-serif font-black text-[#3D271B] flex items-center gap-2">
             <ClipboardList className="text-[#a65827] h-8 w-8" />
-            New Walk-in Bill
+            {orderId ? "Generate Order Bill" : "New Walk-in Bill"}
           </h1>
-          <p className="text-xs text-[#6E5A4F] mt-1">Generate POS invoices, register customer details, and calculate discounts.</p>
+          <p className="text-xs text-[#6E5A4F] mt-1">
+            {orderId ? "Configure and generate receipt for existing customer order." : "Generate POS invoices, register customer details, and calculate discounts."}
+          </p>
         </div>
       </div>
 
