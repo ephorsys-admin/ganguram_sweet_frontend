@@ -1,9 +1,9 @@
-import { LayoutDashboard, Layers, ChefHat, ClipboardList, MessageSquare, LogOut, X, Receipt } from "lucide-react";
+import { LayoutDashboard, Layers, ChefHat, ClipboardList, MessageSquare, LogOut, X, Receipt, Trash2 } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import LogoutConfirmationModal from "./modals/LogoutConfirmationModal";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logOut } from "../../redux/features/auth/authSlice";
 import { useToast } from "../../context/ToastContext";
 
@@ -21,6 +21,14 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+  const admin = useSelector((state) => state.auth.user);
+  const isSuperAdmin = admin?.role === "super_admin";
+
+  const dynamicNavItems = [
+    ...NAV_ITEMS,
+    ...(isSuperAdmin ? [{ path: "/admin/delete-requests", label: "Delete Requests", icon: Trash2 }] : []),
+  ];
 
   const triggerLogout = () => {
     setIsLogoutModalOpen(true);
@@ -93,7 +101,7 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ path, label, icon: Icon }, i) => (
+          {dynamicNavItems.map(({ path, label, icon: Icon }, i) => (
             <motion.div
               key={path}
               initial={{ opacity: 0, x: -16 }}

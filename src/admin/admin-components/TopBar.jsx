@@ -193,11 +193,13 @@ const TopBar = ({ setSidebarOpen }) => {
                   </div>
 
                   <div>
-                    <p className="text-[13px] font-bold text-slate-800">
+                    <p className="text-[13px] font-bold text-slate-800 leading-tight">
                       {name}
                     </p>
-
-                    <p className="text-[11px] text-[#a65827] font-medium capitalize">
+                    <p className="text-[10px] text-slate-500 font-medium truncate max-w-[120px] mt-0.5" title={admin?.email}>
+                      {admin?.email}
+                    </p>
+                    <p className="text-[10px] text-[#a65827] font-bold uppercase tracking-wider mt-1.5">
                       {role}
                     </p>
                   </div>
