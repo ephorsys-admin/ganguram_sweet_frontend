@@ -16,7 +16,15 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  if (result.error && result.error.status === 401) {
+  let shouldRefresh = result.error && result.error.status === 401;
+  if (result.error && result.error.status === 500) {
+    const errorMsg = result.error.data?.message || "";
+    if (errorMsg === "jwt expired" || errorMsg.toLowerCase().includes("jwt")) {
+      shouldRefresh = true;
+    }
+  }
+
+  if (shouldRefresh) {
     // Automatically trigger refresh token flow
     const refreshResult = await baseQuery(
       {

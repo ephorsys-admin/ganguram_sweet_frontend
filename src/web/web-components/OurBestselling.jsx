@@ -1,11 +1,17 @@
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import ProductCard from "./Productcard";
-import { useGetProductsPublicQuery } from "../../redux/services/adminApi";
+import { useDispatch, useSelector } from "react-redux";
+import { getProductsPublic } from "../../redux/features/product/productThunk";
 import { Loader2 } from "lucide-react";
 
 const OurBestselling = () => {
-  const { data: response, isLoading } = useGetProductsPublicQuery();
-  const products = response?.data || [];
+  const dispatch = useDispatch();
+  const { products = [], isLoading } = useSelector((state) => state.product);
+
+  useEffect(() => {
+    dispatch(getProductsPublic());
+  }, [dispatch]);
 
   // Filter for active products, showing all sweets
   const popularSweets = products.filter(p => p.status !== false);

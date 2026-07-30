@@ -1,21 +1,27 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Search, X, Loader2 } from "lucide-react";
 import ProductCard from "./Productcard";
-import { useGetProductsPublicQuery, useGetCategoriesPublicQuery } from "../../redux/services/adminApi";
+import { useDispatch, useSelector } from "react-redux";
+import { getCategoriesPublic } from "../../redux/features/category/categoryThunk";
+import { getProductsPublic } from "../../redux/features/product/productThunk";
 
 const CategoryListing = () => {
   const { categoryId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [query, setQuery] = useState("");
 
-  const { data: catResponse, isLoading: catsLoading } = useGetCategoriesPublicQuery();
-  const categories = catResponse?.data || [];
-  const category = categories.find((c) => c._id === categoryId);
+  const { categories = [], isLoading: catsLoading } = useSelector((state) => state.category);
+  const { products = [], isLoading: prodsLoading } = useSelector((state) => state.product);
 
-  const { data: prodResponse, isLoading: prodsLoading } = useGetProductsPublicQuery();
-  const products = prodResponse?.data || [];
+  useEffect(() => {
+    dispatch(getCategoriesPublic());
+    dispatch(getProductsPublic());
+  }, [dispatch]);
+
+  const category = categories.find((c) => c._id === categoryId);
 
   const filtered = useMemo(() => {
     const base = products.filter((p) => p.category?._id === categoryId && p.status !== false);

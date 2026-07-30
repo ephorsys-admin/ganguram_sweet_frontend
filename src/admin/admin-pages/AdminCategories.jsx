@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Plus, 
   Layers, 
@@ -7,88 +7,49 @@ import {
   Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useDispatch, useSelector } from "react-redux";
 import { 
-  useGetCategoriesQuery, 
-  useCreateCategoryMutation, 
-  useUpdateCategoryMutation
-} from "../../redux/services/adminApi";
+  getCategories, 
+  createCategory, 
+  updateCategory 
+} from "../../redux/features/category/categoryThunk";
+import { useNavigate } from "react-router-dom";
 import CategoryTable from "../admin-components/CategoryTable";
-import CategoryModal from "../admin-components/modals/CategoryModal";
 import { useToast } from "../../context/ToastContext";
 
 const AdminCategories = () => {
   const { showToast } = useToast();
-  const { data: response, isLoading, isError, refetch } = useGetCategoriesQuery();
-  const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
-  const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  
+  const { categories = [], isLoading, error } = useSelector((state) => state.category);
+  const isError = !!error;
+  const [isSaving, setIsSaving] = useState(false);
 
-  const categories = response?.data || [];
-
-  // Modal States
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState("add"); // "add" | "edit"
-  const [currentCategory, setCurrentCategory] = useState(null);
-
-  // Feedback Messages
-  const [alert, setAlert] = useState({ show: false, message: "", type: "success" });
-
-  const showAlert = (message, type = "success") => {
-    setAlert({ show: true, message, type });
-    showToast(message, type);
-    setTimeout(() => setAlert({ show: false, message: "", type: "success" }), 3000);
-  };
+  useEffect(() => {
+    dispatch(getCategories());
+  }, [dispatch]);
 
   const handleOpenAddModal = () => {
-    setModalType("add");
-    setCurrentCategory(null);
-    setModalOpen(true);
+    navigate("/admin/categories/create");
   };
 
   const handleOpenEditModal = (cat) => {
-    setModalType("edit");
-    setCurrentCategory(cat);
-    setModalOpen(true);
-  };
-
-  const handleModalSubmit = async ({ name, description, sortOrder, status, imageFile }) => {
-    if (!name.trim()) {
-      showAlert("Category name is required", "error");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("name", name.trim());
-    formData.append("description", description.trim());
-    formData.append("sortOrder", sortOrder);
-    formData.append("status", status);
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
-
-    try {
-      if (modalType === "add") {
-        await createCategory(formData).unwrap();
-        showAlert("Category created successfully!");
-      } else {
-        await updateCategory({ categoryId: currentCategory._id, formData }).unwrap();
-        showAlert("Category updated successfully!");
-      }
-      setModalOpen(false);
-      refetch();
-    } catch (err) {
-      showAlert(err?.data?.message || "Failed to save category. Please try again.", "error");
-    }
+    navigate(`/admin/categories/edit/${cat._id}`);
   };
 
   const handleToggleStatus = async (cat) => {
     const formData = new FormData();
     formData.append("status", !cat.status);
+    setIsSaving(true);
     try {
-      await updateCategory({ categoryId: cat._id, formData }).unwrap();
-      showAlert(`Category marked as ${!cat.status ? 'Active' : 'Inactive'}`);
-      refetch();
+      await dispatch(updateCategory({ categoryId: cat._id, formData })).unwrap();
+      showToast(`Category marked as ${!cat.status ? 'Active' : 'Inactive'}`, "success");
+      dispatch(getCategories());
     } catch (err) {
-      showAlert("Failed to update status", "error");
+      showToast(err?.message || "Failed to update status", "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -111,24 +72,6 @@ const AdminCategories = () => {
         </button>
       </div>
 
-      {/* Alert System */}
-      <AnimatePresence>
-        {alert.show && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 border shadow-md
-              ${alert.type === "success" 
-                ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
-                : "bg-red-50 text-red-800 border-red-200"}`}
-          >
-            {alert.type === "success" ? <CheckCircle size={16} className="text-emerald-600" /> : <AlertTriangle size={16} className="text-red-600" />}
-            {alert.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Content View */}
       {isLoading ? (
         <div className="bg-white p-12 rounded-3xl border border-[#E6CCB2]/30 shadow-xs flex flex-col items-center justify-center space-y-3">
@@ -140,7 +83,7 @@ const AdminCategories = () => {
           <AlertTriangle className="h-10 w-10 text-red-600" />
           <span className="text-sm font-bold text-red-800">Connection Failed</span>
           <p className="text-xs text-red-600/80">Make sure your backend server is running and try again.</p>
-          <button onClick={refetch} className="mt-2 px-4 py-2 bg-red-600 text-white font-semibold text-xs rounded-lg shadow-md hover:bg-red-700 transition">
+          <button onClick={() => dispatch(getCategories())} className="mt-2 px-4 py-2 bg-red-600 text-white font-semibold text-xs rounded-lg shadow-md hover:bg-red-700 transition">
             Retry Connection
           </button>
         </div>
@@ -167,16 +110,6 @@ const AdminCategories = () => {
           onToggleStatus={handleToggleStatus}
         />
       )}
-
-      {/* Reusable Dialog Component */}
-      <CategoryModal 
-        isOpen={modalOpen}
-        type={modalType}
-        category={currentCategory}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleModalSubmit}
-        isLoading={isCreating || isUpdating}
-      />
     </div>
   );
 };

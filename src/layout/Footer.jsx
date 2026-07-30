@@ -22,11 +22,11 @@ const TwitterIcon = (props) => (
   </svg>
 );
 
-const QUICK_LINKS = ["Home", "About", "Our Sweets", "Gallery", "Contact"];
+const QUICK_LINKS = ["Home", "About", "Our Items", "Gallery", "Contact"];
 const LINK_MAP = {
   "Home": "/",
   "About": "/about",
-  "Our Sweets": "/our-sweets",
+  "Our Items": "/products",
   "Gallery": "/gallery",
   "Contact": "/contact",
 };
@@ -106,7 +106,7 @@ const Footer = () => {
             </ul>
           </motion.div>
 
-          {/* Our Sweets */}
+          {/* Our Items */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}

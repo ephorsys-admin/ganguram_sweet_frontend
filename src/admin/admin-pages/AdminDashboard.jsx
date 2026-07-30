@@ -13,7 +13,8 @@ import {
   AlertCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { useGetCategoriesQuery } from "../../redux/services/adminApi";
+import { useDispatch, useSelector } from "react-redux";
+import { getCategories } from "../../redux/features/category/categoryThunk";
 
 // Helper to load localStorage data with fallback
 const getLocalStorageData = (key, fallback) => {
@@ -22,9 +23,13 @@ const getLocalStorageData = (key, fallback) => {
 };
 
 const AdminDashboard = () => {
-  // Fetch real categories from the API
-  const { data: categoriesData } = useGetCategoriesQuery();
-  const categoryCount = categoriesData?.data?.length || 0;
+  const dispatch = useDispatch();
+  const { categories = [] } = useSelector((state) => state.category);
+  const categoryCount = categories.length;
+
+  useEffect(() => {
+    dispatch(getCategories());
+  }, [dispatch]);
 
   // Load mock products, orders, and inquiries from localStorage (to maintain changes across pages)
   const [products] = useState(() => getLocalStorageData("ganguram_products", [
