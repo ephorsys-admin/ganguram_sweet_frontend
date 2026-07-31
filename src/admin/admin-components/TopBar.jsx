@@ -126,7 +126,7 @@ const TopBar = ({ setSidebarOpen }) => {
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={toggleFullscreen}
-          className="w-8 h-8 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+          className="hidden sm:flex w-8 h-8 rounded-xl border border-slate-200 items-center justify-center text-slate-600 hover:bg-slate-50 transition cursor-pointer"
         >
           {isFullscreen ? (
             <Minimize size={18} />

@@ -15,6 +15,7 @@ import {
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { getCategories } from "../../redux/features/category/categoryThunk";
+import { getAllContacts } from "../../redux/features/contact/contactThunk";
 
 // Helper to load localStorage data with fallback
 const getLocalStorageData = (key, fallback) => {
@@ -30,8 +31,11 @@ const AdminDashboard = () => {
   const adminRole = admin?.role === "super_admin" ? "Super Admin" : "Admin";
   const categoryCount = categories.length;
 
+  const { contacts: inquiries = [] } = useSelector((state) => state.contact);
+
   useEffect(() => {
     dispatch(getCategories());
+    dispatch(getAllContacts());
   }, [dispatch]);
 
   // Load mock products, orders, and inquiries from localStorage (to maintain changes across pages)
@@ -51,11 +55,7 @@ const AdminDashboard = () => {
     { id: "ORD-1005", customerName: "Rahul Verma", amount: 890, itemsCount: 2, status: "Pending", date: "2026-07-25" }
   ]));
 
-  const [inquiries] = useState(() => getLocalStorageData("ganguram_inquiries", [
-    { id: 1, name: "Vikram Singh", email: "vikram@gmail.com", phone: "9876543210", message: "Bulk catering order for wedding on 15th August.", status: "Pending", date: "2026-07-28" },
-    { id: 2, name: "Anjali Gupta", email: "anjali@gmail.com", phone: "8765432109", message: "Do you deliver packaged sweets to Mumbai?", status: "Resolved", date: "2026-07-27" },
-    { id: 3, name: "Debashish Roy", email: "debashish@gmail.com", phone: "7654321098", message: "Franchise options in Cuttack.", status: "Pending", date: "2026-07-26" }
-  ]));
+  // We now fetch inquiries via Redux, no longer mock
 
   // Sync back defaults to localStorage if empty
   useEffect(() => {
@@ -331,15 +331,15 @@ const AdminDashboard = () => {
           </div>
 
           <div className="space-y-3.5">
-            {inquiries.slice(0, 3).map((inquiry) => (
-              <div key={inquiry.id} className="p-3 bg-[#FAF6F0]/40 rounded-2xl border border-[#E6CCB2]/20 flex items-start gap-3 justify-between">
+            {inquiries.filter(i => !i.isDeleted).slice(0, 3).map((inquiry) => (
+              <div key={inquiry._id} className="p-3 bg-[#FAF6F0]/40 rounded-2xl border border-[#E6CCB2]/20 flex items-start gap-3 justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-xs text-[#3D271B]">{inquiry.name}</span>
-                    <span className="text-[9px] text-[#6E5A4F]/60 font-mono">{inquiry.date}</span>
+                    <span className="text-[9px] text-[#6E5A4F]/60 font-mono">{new Date(inquiry.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <p className="text-[11px] text-[#6E5A4F] line-clamp-1 italic">
-                    "{inquiry.message}"
+                  <p className="text-[11px] text-[#6E5A4F] line-clamp-1 italic whitespace-pre-wrap">
+                    "{inquiry.reason}"
                   </p>
                   <div className="flex items-center gap-2 text-[9px] font-mono text-[#6E5A4F]/70">
                     <span>{inquiry.email}</span>
