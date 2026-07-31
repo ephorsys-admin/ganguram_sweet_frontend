@@ -5,10 +5,10 @@ const InquiryList = ({ inquiries, selectedInquiryId, onSelectInquiry }) => {
     <div className="space-y-3">
       {inquiries.map((inq) => (
         <div 
-          key={inq.id}
+          key={inq._id}
           onClick={() => onSelectInquiry(inq)}
           className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3
-            ${selectedInquiryId === inq.id 
+            ${selectedInquiryId === inq._id 
               ? "bg-white border-[#DFA250] shadow-md ring-1 ring-[#DFA250]/20" 
               : "bg-white border-[#E6CCB2]/30 hover:border-[#E6CCB2]/60 hover:shadow-xs"}`}
         >
@@ -28,12 +28,12 @@ const InquiryList = ({ inquiries, selectedInquiryId, onSelectInquiry }) => {
             </span>
           </div>
 
-          <p className="text-[#6E5A4F] text-xs line-clamp-2 leading-relaxed">
-            "{inq.message}"
+          <p className="text-[#6E5A4F] text-xs line-clamp-2 leading-relaxed whitespace-pre-wrap">
+            "{inq.reason}"
           </p>
 
           <div className="flex justify-between items-center pt-2 border-t border-[#FAF6F0] text-[10px] font-mono text-[#6E5A4F]/60">
-            <span className="flex items-center gap-1"><Calendar size={11} /> {inq.date}</span>
+            <span className="flex items-center gap-1"><Calendar size={11} /> {new Date(inq.createdAt).toLocaleDateString()}</span>
             <span className="text-[#a65827] font-semibold">Click to inspect</span>
           </div>
         </div>

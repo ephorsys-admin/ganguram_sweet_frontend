@@ -10,6 +10,8 @@ import {
   Sparkles,
   ChevronDown
 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { createContact } from "../../redux/features/contact/contactThunk";
 
 const BRANCHES = [
   {
@@ -100,6 +102,8 @@ const HERO_GRADIENTS = [
 
 const Contact = () => {
   const [gradientIndex, setGradientIndex] = useState(0);
+  const dispatch = useDispatch();
+  const { isLoading: isSubmitting, error } = useSelector((state) => state.contact);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -116,7 +120,6 @@ const Contact = () => {
     message: "",
   });
   const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const validate = () => {
@@ -145,22 +148,34 @@ const Contact = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        type: "General Inquiry",
-        message: "",
-      });
-    }, 1500);
+    try {
+      const payload = {
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        reason: `[${formData.type}] ${formData.message}`,
+      };
+
+      const resultAction = await dispatch(createContact(payload)).unwrap();
+      
+      if (resultAction.success) {
+        setIsSubmitted(true);
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          type: "General Inquiry",
+          message: "",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to submit inquiry:", err);
+      // Optional: Add a toast notification for error here
+    }
   };
 
   return (

@@ -4,24 +4,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import InquiryList from "../admin-components/InquiryList";
 import InquiryDetail from "../admin-components/InquiryDetail";
 import { useToast } from "../../context/ToastContext";
+import { useDispatch, useSelector } from "react-redux";
+import { getAllContacts, updateContactStatus, deleteContact } from "../../redux/features/contact/contactThunk";
+import DeleteConfirmationModal from "../admin-components/Product/DeleteConfirmationModal";
 
 const AdminInquiries = () => {
   const { showToast } = useToast();
-  // Load inquiries from localStorage
-  const [inquiries, setInquiries] = useState(() => {
-    const data = localStorage.getItem("ganguram_inquiries");
-    return data ? JSON.parse(data) : [
-      { id: 1, name: "Vikram Singh", email: "vikram@gmail.com", phone: "9876543210", message: "Bulk catering order for wedding on 15th August. Need Chhena Poda and Rajbhog for 500 guests.", status: "Pending", date: "2026-07-28" },
-      { id: 2, name: "Anjali Gupta", email: "anjali@gmail.com", phone: "8765432109", message: "Do you deliver packaged/canned sweets to Mumbai? Wanted to order Kaju Katli for gifting.", status: "Resolved", date: "2026-07-27" },
-      { id: 3, name: "Debashish Roy", email: "debashish@gmail.com", phone: "7654321098", message: "Wanted to inquire about franchise options in Cuttack. Please share the details of partnership.", status: "Pending", date: "2026-07-26" },
-      { id: 4, name: "Shalini Patnaik", email: "shalini.p@outlook.com", phone: "9437012345", message: "Amazing Chhena Jhili! Visited the outlet yesterday and was very impressed. Keep up the quality.", status: "Resolved", date: "2026-07-24" }
-    ];
-  });
+  const dispatch = useDispatch();
+  
+  const { contacts: inquiries = [], isLoading } = useSelector((state) => state.contact);
 
-  // Save changes to localStorage
   useEffect(() => {
-    localStorage.setItem("ganguram_inquiries", JSON.stringify(inquiries));
-  }, [inquiries]);
+    dispatch(getAllContacts());
+  }, [dispatch]);
 
   // Filters State
   const [search, setSearch] = useState("");
@@ -30,41 +25,62 @@ const AdminInquiries = () => {
   // Selected Inquiry for viewing details
   const [selectedInquiry, setSelectedInquiry] = useState(null);
 
-  const handleToggleResolve = (id) => {
-    const updated = inquiries.map(inq => {
-      if (inq.id === id) {
-        const nextStatus = inq.status === "Pending" ? "Resolved" : "Pending";
-        return { ...inq, status: nextStatus };
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [inquiryToDelete, setInquiryToDelete] = useState(null);
+
+  const handleToggleResolve = async (id) => {
+    const target = inquiries.find(inq => inq._id === id);
+    if (!target) return;
+    
+    const nextStatus = target.status === "Pending" ? "Resolved" : "Pending";
+    
+    try {
+      const resultAction = await dispatch(updateContactStatus({ contactId: id, status: nextStatus })).unwrap();
+      if (resultAction.success) {
+        if (selectedInquiry && selectedInquiry._id === id) {
+          setSelectedInquiry({
+            ...selectedInquiry,
+            status: nextStatus
+          });
+        }
+        showToast(`Inquiry marked as ${nextStatus}!`, "success");
       }
-      return inq;
-    });
-    setInquiries(updated);
-    if (selectedInquiry && selectedInquiry.id === id) {
-      setSelectedInquiry({
-        ...selectedInquiry,
-        status: selectedInquiry.status === "Pending" ? "Resolved" : "Pending"
-      });
+    } catch (err) {
+      showToast(err.message || "Failed to update inquiry status", "error");
     }
-    const target = inquiries.find(inq => inq.id === id);
-    const nextStatus = target?.status === "Pending" ? "Resolved" : "Pending";
-    showToast(`Inquiry marked as ${nextStatus}!`, "success");
   };
 
   const handleDeleteInquiry = (id) => {
-    if (window.confirm("Are you sure you want to delete this inquiry record?")) {
-      setInquiries(inquiries.filter(inq => inq.id !== id));
-      setSelectedInquiry(null);
-      showToast("Inquiry record deleted successfully.", "info");
+    setInquiryToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!inquiryToDelete) return;
+    try {
+      const resultAction = await dispatch(deleteContact(inquiryToDelete)).unwrap();
+      if (resultAction.success) {
+        setSelectedInquiry(null);
+        showToast("Inquiry record deleted successfully.", "info");
+      }
+    } catch (err) {
+      showToast(err.message || "Failed to delete inquiry", "error");
+    } finally {
+      setIsDeleteModalOpen(false);
+      setInquiryToDelete(null);
     }
   };
 
   // Filtered inquiries
   const filteredInquiries = inquiries.filter(inq => {
-    const matchesSearch = inq.name.toLowerCase().includes(search.toLowerCase()) || 
-                          inq.email.toLowerCase().includes(search.toLowerCase()) || 
-                          inq.message.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = inq.name?.toLowerCase().includes(search.toLowerCase()) || 
+                          inq.email?.toLowerCase().includes(search.toLowerCase()) || 
+                          inq.reason?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "All" || inq.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    // Don't show deleted ones
+    const notDeleted = !inq.isDeleted;
+    return matchesSearch && matchesStatus && notDeleted;
   });
 
   return (
@@ -125,7 +141,7 @@ const AdminInquiries = () => {
           ) : (
             <InquiryList 
               inquiries={filteredInquiries}
-              selectedInquiryId={selectedInquiry?.id}
+              selectedInquiryId={selectedInquiry?._id}
               onSelectInquiry={setSelectedInquiry}
             />
           )}
@@ -172,6 +188,17 @@ const AdminInquiries = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setInquiryToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Inquiry"
+        message="Are you sure you want to delete this inquiry record? This action cannot be undone."
+      />
     </div>
   );
 };

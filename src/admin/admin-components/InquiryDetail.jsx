@@ -32,7 +32,7 @@ const InquiryDetail = ({ inquiry, onToggleStatus, onDelete }) => {
           <p className="text-sm font-bold text-[#3D271B]">{inquiry.name}</p>
           <p className="flex items-center gap-2 text-[#6E5A4F]"><Mail size={13} /> {inquiry.email}</p>
           <p className="flex items-center gap-2 text-[#6E5A4F]"><Phone size={13} /> {inquiry.phone}</p>
-          <p className="flex items-center gap-2 text-[#6E5A4F] font-mono text-[10px]"><Calendar size={13} /> Received: {inquiry.date}</p>
+          <p className="flex items-center gap-2 text-[#6E5A4F] font-mono text-[10px]"><Calendar size={13} /> Received: {new Date(inquiry.createdAt).toLocaleDateString()}</p>
         </div>
       </div>
 
@@ -41,15 +41,15 @@ const InquiryDetail = ({ inquiry, onToggleStatus, onDelete }) => {
         <h4 className="font-bold text-[#3D271B] border-b border-[#E6CCB2]/20 pb-1">
           Message Content
         </h4>
-        <p className="text-[#3D271B] leading-relaxed font-semibold italic text-xs">
-          "{inquiry.message}"
+        <p className="text-[#3D271B] leading-relaxed font-semibold italic text-xs whitespace-pre-wrap">
+          "{inquiry.reason}"
         </p>
       </div>
 
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-2 pt-2 border-t border-[#FAF6F0] justify-end">
         <button
-          onClick={() => onDelete(inquiry.id)}
+          onClick={() => onDelete(inquiry._id)}
           className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition cursor-pointer"
           title="Delete Inquiry Record"
         >
@@ -57,7 +57,7 @@ const InquiryDetail = ({ inquiry, onToggleStatus, onDelete }) => {
         </button>
         <div className="flex-grow" />
         <button
-          onClick={() => onToggleStatus(inquiry.id)}
+          onClick={() => onToggleStatus(inquiry._id)}
           className={`px-4 py-2 text-white rounded-xl font-bold flex items-center gap-1.5 cursor-pointer shadow-md transition
             ${inquiry.status === "Pending" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-amber-600 hover:bg-amber-700"}`}
         >

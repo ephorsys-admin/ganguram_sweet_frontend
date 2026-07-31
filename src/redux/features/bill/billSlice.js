@@ -4,6 +4,7 @@ import {
   getSingleBill,
   createWalkinBill,
   createOrderBill,
+  deleteBill,
 } from "./billThunk";
 
 const initialState = {
@@ -90,6 +91,25 @@ const billSlice = createSlice({
       .addCase(createOrderBill.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload?.message || "Failed to generate order bill";
+      })
+
+      // deleteBill
+      .addCase(deleteBill.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(deleteBill.fulfilled, (state, action) => {
+        state.isLoading = false;
+        const deletedId = action.meta.arg;
+        state.bills = state.bills.filter((b) => b._id !== deletedId);
+        if (state.currentBill && state.currentBill._id === deletedId) {
+          state.currentBill = null;
+        }
+        state.error = null;
+      })
+      .addCase(deleteBill.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload?.message || "Failed to delete bill";
       });
   },
 });

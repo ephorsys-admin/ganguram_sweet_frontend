@@ -141,3 +141,14 @@ export const createOrderBill = createAsyncThunk(
     );
   }
 );
+
+// ==========================================
+// Thunk: Delete Bill (Super Admin Only)
+// ==========================================
+export const deleteBill = createAsyncThunk(
+  "bill/deleteBill",
+  async (billId, thunkAPI) => {
+    return await fetchWithAuth(`/bill/${billId}`, { method: "DELETE" }, thunkAPI);
+  }
+);
+

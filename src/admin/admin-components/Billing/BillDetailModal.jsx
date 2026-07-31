@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Download, Printer, X, Receipt, Calendar, User, PhoneCall, MapPin, ShoppingBag } from "lucide-react";
+import { Download, Printer, X, Receipt, Calendar, User, PhoneCall, MapPin, ShoppingBag, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function BillDetailModal({ isOpen, bill, onClose }) {
+export default function BillDetailModal({ isOpen, bill, onClose, onDelete, isSuperAdmin }) {
   const [downloading, setDownloading] = useState(false);
   const topRef = useRef(null);
 
@@ -289,6 +289,15 @@ export default function BillDetailModal({ isOpen, bill, onClose }) {
 
           {/* Action Toolbar */}
           <div className="flex items-center justify-end gap-3 no-print pt-4 border-t border-[#FAF6F0] mt-4">
+            {isSuperAdmin && (
+              <button
+                onClick={() => onDelete(bill._id)}
+                className="mr-auto px-4 py-2 bg-red-50 hover:bg-red-100 border border-red-200 text-red-650 font-bold text-xs rounded-xl cursor-pointer flex items-center gap-1.5 active:scale-95 transition"
+              >
+                <Trash2 className="w-4 h-4" /> Delete Bill
+              </button>
+            )}
+
             <button
               onClick={onClose}
               className="px-4 py-2 border border-slate-200 text-slate-650 font-bold text-xs rounded-xl hover:bg-slate-50 cursor-pointer active:scale-95 transition"
