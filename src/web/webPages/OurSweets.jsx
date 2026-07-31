@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   MapPin,
   AlertCircle,
+  Layers,
 } from "lucide-react";
 import ProductCard from "../web-components/Productcard";
 import LocationPicker from "../web-components/LocationPicker";
@@ -20,6 +21,166 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { getCategoriesPublic } from "../../redux/features/category/categoryThunk";
 import { getProductsPublic, getProductById } from "../../redux/features/product/productThunk";
+
+/* =========================================================
+   CATEGORY ROW — pill gradients + auto-scroll (same pattern
+   as ShopByCategory.jsx, adapted for selection state)
+   ========================================================= */
+
+const GRADIENTS = [
+  "linear-gradient(160deg,#FFE9C9,#F7C46B)",
+  "linear-gradient(160deg,#FFF3C4,#F2C24A)",
+  "linear-gradient(160deg,#FBE1E8,#F0B8C8)",
+  "linear-gradient(160deg,#FBE0C4,#F2A85E)",
+  "linear-gradient(160deg,#E4E3F9,#B7B4E8)",
+  "linear-gradient(160deg,#FDE7D6,#F0B98E)",
+  "linear-gradient(160deg,#F7E7D2,#E8C39A)",
+];
+
+const AUTO_SCROLL_SPEED = 0.6; // px per frame
+
+const CategoryPill = ({ label, image, index, isSelected, onClick }) => {
+  // "All Items" (index -1) ko fixed brand image milta hai, baaki ko gradient
+  const bgGradient = index === -1 ? null : GRADIENTS[index % GRADIENTS.length];
+
+  return (
+    <motion.button
+      onClick={onClick}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.35, delay: Math.min(Math.max(index, 0), 8) * 0.05 }}
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.95 }}
+      className="group flex shrink-0 flex-col items-center gap-2 cursor-pointer focus:outline-none"
+    >
+      <div
+        className={`relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full shadow-sm transition-all duration-300 group-hover:scale-105 xs:h-20 xs:w-20 sm:h-20 sm:w-20 border-2 ${isSelected
+            ? "border-[#a65827] shadow-md ring-2 ring-[#a65827]/15 scale-105"
+            : "border-brand-accent/20"
+          }`}
+        style={{ background: bgGradient || "#FFFFFF" }}
+      >
+        {image ? (
+          <img src={image} alt={label} className="h-full w-full object-cover" />
+        ) : (
+          <Layers className="text-brand-dark/60 h-6 w-6" />
+        )}
+      </div>
+
+      <span
+        className={`text-center text-[11px] sm:text-xs font-bold leading-tight transition-colors duration-300 ${isSelected ? "text-[#a65827]" : "text-[#5C2A1A]"
+          }`}
+        style={{ maxWidth: "6rem" }}
+      >
+        {label}
+      </span>
+    </motion.button>
+  );
+};
+
+const CategoryScrollRow = ({ categories, selectedCategory, onSelect }) => {
+  const trackRef = useRef(null);
+  const rafRef = useRef(null);
+  const pausedRef = useRef(false);
+  const [overflowing, setOverflowing] = useState(false);
+
+  // "All Items" ko list ke saath merge karte hain taaki wahi ek scroll-track mein aa jaye
+  const allItems = useMemo(
+    () => [{ _id: "All", name: "All Items", image: null, isAll: true }, ...categories],
+    [categories]
+  );
+
+  // Overflow detection — sirf tabhi duplicate + auto-scroll karo jab row
+  // visible width se bada ho
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el || allItems.length === 0) {
+      setOverflowing(false);
+      return;
+    }
+
+    const checkOverflow = () => {
+      const singleWidth = overflowing ? el.scrollWidth / 2 : el.scrollWidth;
+      setOverflowing(singleWidth > el.clientWidth + 1);
+    };
+
+    checkOverflow();
+    const resizeObserver = new ResizeObserver(checkOverflow);
+    resizeObserver.observe(el);
+    return () => resizeObserver.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allItems.length]);
+
+  // Continuous auto-scroll with seamless loop
+  useEffect(() => {
+    if (!overflowing) return;
+    const el = trackRef.current;
+    if (!el) return;
+
+    const step = () => {
+      if (!pausedRef.current && el) {
+        el.scrollLeft += AUTO_SCROLL_SPEED;
+        const halfWidth = el.scrollWidth / 2;
+        if (el.scrollLeft >= halfWidth) {
+          el.scrollLeft -= halfWidth;
+        }
+      }
+      rafRef.current = requestAnimationFrame(step);
+    };
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [overflowing]);
+
+  const pause = useCallback(() => {
+    pausedRef.current = true;
+  }, []);
+  const resume = useCallback(() => {
+    pausedRef.current = false;
+  }, []);
+
+  const displayItems = useMemo(
+    () => (overflowing ? [...allItems, ...allItems] : allItems),
+    [allItems, overflowing]
+  );
+
+  return (
+    <div className="relative mt-2">
+      {overflowing && (
+        <>
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-linear-to-r from-[#FFFDF8] to-transparent sm:w-14" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-[#FFFDF8] to-transparent sm:w-14" />
+        </>
+      )}
+
+      <div
+        ref={trackRef}
+        onMouseEnter={pause}
+        onMouseLeave={resume}
+        onTouchStart={pause}
+        onTouchEnd={resume}
+        className={`flex gap-6 overflow-x-auto px-1 py-2 sm:gap-10 scrollbar-none [&::-webkit-scrollbar]:hidden ${overflowing ? "" : "justify-center"
+          }`}
+      >
+        {displayItems.map((cat, i) => {
+          const isAll = cat.isAll;
+          const isSelected = isAll ? selectedCategory === "All" : selectedCategory === cat._id;
+          return (
+            <CategoryPill
+              key={`${cat._id}-${i}`}
+              label={isAll ? "All Items" : cat.name}
+              image={isAll ? "/Mylogo/logo.png" : cat.image?.url}
+              index={isAll ? -1 : i}
+              isSelected={isSelected}
+              onClick={() => onSelect(isAll ? "All" : cat._id)}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 /* =========================================================
    STORE LOCATION + DISTANCE + DELIVERY CHARGE UTILITIES
@@ -763,7 +924,8 @@ const ProductDetailsModal = ({ productId, onClose }) => {
 };
 
 /* =========================================================
-   OUR SWEETS (unchanged from original, listing page)
+   OUR SWEETS (listing page) — category row ab ShopByCategory
+   jaisi gradient pill + auto-scroll style use karti hai
    ========================================================= */
 
 const OurSweets = () => {
@@ -828,20 +990,20 @@ const OurSweets = () => {
           </motion.p>
         </div>
 
-        <div className="max-w-xl mx-auto bg-white p-3.5 rounded-3xl border border-[#E6CCB2]/30 shadow-xs">
+        <div className="max-w-xl mx-auto">
           <div className="relative w-full">
-            <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search items by name..."
-              className="w-full pl-10 pr-10 py-2.5 bg-[#FAF6F0]/40 border border-[#E6CCB2]/40 rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#a65827] text-xs text-slate-700 placeholder-slate-400"
+              className="w-full pl-9 pr-9 py-2.5 bg-white border border-slate-300 rounded-md outline-none focus:border-[#a65827] focus:ring-1 focus:ring-[#a65827] text-sm text-slate-700 placeholder-slate-400 transition-colors"
             />
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-slate-100 rounded-full transition text-slate-400 cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-slate-100 rounded-full transition text-slate-400 cursor-pointer"
               >
                 <X size={14} />
               </button>
@@ -849,58 +1011,13 @@ const OurSweets = () => {
           </div>
         </div>
 
-        <div className="w-full py-4 border-b border-[#E6CCB2]/20">
-          <div className="flex items-center gap-6 overflow-x-auto pb-3 pt-1 justify-start md:justify-center px-4 scrollbar-none">
-            <button
-              onClick={() => setSelectedCategory("All")}
-              className="flex flex-col items-center flex-shrink-0 focus:outline-none cursor-pointer group"
-            >
-              <div
-                className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 flex items-center justify-center overflow-hidden transition-all duration-300 bg-white ${selectedCategory === "All"
-                  ? "border-[#a65827] shadow-md ring-2 ring-[#a65827]/15 scale-105"
-                  : "border-[#E6CCB2]/40 hover:border-[#a65827]/50"
-                  }`}
-              >
-                <img
-                  src="/Mylogo/logo.png"
-                  className="w-12 h-12 object-contain group-hover:scale-110 transition duration-300"
-                  alt="All Items"
-                />
-              </div>
-              <span className={`text-[11px] sm:text-xs font-bold mt-2 transition-colors duration-300 ${selectedCategory === "All" ? "text-[#a65827]" : "text-[#5C2A1A]"
-                }`}>
-                All Items
-              </span>
-            </button>
-
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat._id;
-              return (
-                <button
-                  key={cat._id}
-                  onClick={() => setSelectedCategory(cat._id)}
-                  className="flex flex-col items-center flex-shrink-0 focus:outline-none cursor-pointer group"
-                >
-                  <div
-                    className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 flex items-center justify-center overflow-hidden transition-all duration-300 bg-white ${isSelected
-                      ? "border-[#a65827] shadow-md ring-2 ring-[#a65827]/15 scale-105"
-                      : "border-[#E6CCB2]/40 hover:border-[#a65827]/50"
-                      }`}
-                  >
-                    <img
-                      src={cat.image?.url || "/Mylogo/logo.png"}
-                      className="w-full h-full object-cover group-hover:scale-110 transition duration-300"
-                      alt={cat.name}
-                    />
-                  </div>
-                  <span className={`text-[11px] sm:text-xs font-bold mt-2 transition-colors duration-300 ${isSelected ? "text-[#a65827]" : "text-[#5C2A1A]"
-                    }`}>
-                    {cat.name}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+        {/* ShopByCategory-style auto-scroll gradient pills */}
+        <div className="w-full py-2 border-b border-[#E6CCB2]/20">
+          <CategoryScrollRow
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelect={setSelectedCategory}
+          />
         </div>
 
         {isLoading ? (

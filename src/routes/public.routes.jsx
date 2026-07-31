@@ -4,6 +4,7 @@ import MainLayout from "../layout/MainLayout";
 import ProductDetails from "../web/web-components/Productdetails";
 import CategoryListing from "../web/web-components/Categorylisting";
 import AboutUs from "../web/webPages/AboutUs";
+import OrderPage from "../web/web-components/Orderpage";
 
 const HomePage = lazy(() => import("../web/webPages/HomePage"));
 const OurSweets = lazy(() => import("../web/webPages/OurSweets"));
@@ -17,6 +18,7 @@ const PublicRoutes = (
     <Route index element={<HomePage />} />
     <Route path="/products" element={<OurSweets />} />
     <Route path="/products/:productId" element={<ProductDetails />} />
+    <Route path="/product/:productId/order" element={<OrderPage />} />
     <Route path="/category/:categoryId" element={<CategoryListing />} />
     <Route path="/about" element={<AboutUs />} />
     <Route path="/gallery" element={<Gallery />} />

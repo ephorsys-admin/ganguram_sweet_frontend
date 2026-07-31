@@ -14,7 +14,7 @@ const OurBestselling = () => {
   }, [dispatch]);
 
   // Filter for active products, showing all sweets
-  const popularSweets = products.filter(p => p.status !== false);
+  const popularSweets = products.filter((p) => p.status !== false);
 
   return (
     <section className="w-full" style={{ backgroundColor: "#FFFDF8" }}>
@@ -28,7 +28,7 @@ const OurBestselling = () => {
           className="text-center"
         >
           <h2
-            className="text-2xl font-bold sm:text-3xl"
+            className="text-2xl font-bold sm:text-4xl"
             style={{ color: "#3D1F12" }}
           >
             Our Popular Sweets
@@ -41,12 +41,12 @@ const OurBestselling = () => {
         {/* Product grid */}
         {isLoading ? (
           <div className="mt-8 flex justify-center py-6">
-            <Loader2 className="h-8 w-8 text-[#DFA250] animate-spin" />
+            <Loader2 className="h-8 w-8 text-brand-gold animate-spin" />
           </div>
         ) : popularSweets.length === 0 ? (
           <p className="mt-8 text-center text-xs text-[#7A5C4A]">No popular sweets available right now.</p>
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-5 lg:gap-x-4">
             {popularSweets.map((product) => (
               <ProductCard key={product._id} product={product} />
             ))}
