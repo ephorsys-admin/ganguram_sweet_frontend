@@ -1,4 +1,4 @@
-import { LayoutDashboard, Layers, ChefHat, ClipboardList, MessageSquare, LogOut, X, Receipt, Trash2 } from "lucide-react";
+import { LayoutDashboard, Layers, ChefHat, ClipboardList, MessageSquare, LogOut, X, Receipt, Trash2, Megaphone } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { path: "/admin/orders", label: "Orders", icon: ClipboardList },
   { path: "/admin/billing", label: "Billing", icon: Receipt },
   { path: "/admin/inquiries", label: "Inquiries", icon: MessageSquare },
+  { path: "/admin/advertisements", label: "Advertisements", icon: Megaphone },
 ];
 
 const SideBar = ({ sidebarOpen, setSidebarOpen }) => {

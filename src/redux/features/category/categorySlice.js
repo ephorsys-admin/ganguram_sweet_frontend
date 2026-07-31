@@ -15,6 +15,22 @@ const initialState = {
   error: null,
 };
 
+const sortCategories = (categories) => {
+  if (!Array.isArray(categories)) return [];
+  return [...categories].sort((a, b) => {
+    // Treat 0, undefined, or null sortOrder as Infinity (pushing them to the end)
+    const orderA = (!a.sortOrder || a.sortOrder === 0) ? Infinity : a.sortOrder;
+    const orderB = (!b.sortOrder || b.sortOrder === 0) ? Infinity : b.sortOrder;
+
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+
+    // Default to sorting by createdAt descending (newest first)
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
+};
+
 const categorySlice = createSlice({
   name: "category",
   initialState,
@@ -35,7 +51,7 @@ const categorySlice = createSlice({
       })
       .addCase(getCategories.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.categories = action.payload.data || [];
+        state.categories = sortCategories(action.payload.data || []);
         state.error = null;
       })
       .addCase(getCategories.rejected, (state, action) => {
@@ -50,7 +66,7 @@ const categorySlice = createSlice({
       })
       .addCase(getCategoriesPublic.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.categories = action.payload.data || [];
+        state.categories = sortCategories(action.payload.data || []);
         state.error = null;
       })
       .addCase(getCategoriesPublic.rejected, (state, action) => {
@@ -97,6 +113,7 @@ const categorySlice = createSlice({
         state.isLoading = false;
         if (action.payload.data) {
           state.categories.push(action.payload.data);
+          state.categories = sortCategories(state.categories);
         }
         state.error = null;
       })
@@ -117,6 +134,7 @@ const categorySlice = createSlice({
           state.categories = state.categories.map((cat) =>
             cat._id === updatedCat._id ? updatedCat : cat
           );
+          state.categories = sortCategories(state.categories);
         }
         state.error = null;
       })

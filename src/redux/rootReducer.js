@@ -7,6 +7,7 @@ import billReducer from "./features/bill/billSlice";
 import { adminApi } from "./services/adminApi";
 
 import contactReducer from "./features/contact/contactSlice";
+import advertisementReducer from "./features/advertisement/advertisementSlice";
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -15,6 +16,7 @@ const rootReducer = combineReducers({
   order: orderReducer,
   bill: billReducer,
   contact: contactReducer,
+  advertisement: advertisementReducer,
   [adminApi.reducerPath]: adminApi.reducer,
 });
 

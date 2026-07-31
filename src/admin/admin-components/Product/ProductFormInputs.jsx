@@ -1,4 +1,4 @@
-import { Upload, Layers, ToggleRight, ToggleLeft, Loader2, Save } from "lucide-react";
+import { Upload, Layers, ToggleRight, ToggleLeft, Loader2, Save, X, ArrowLeft, ArrowRight } from "lucide-react";
 
 const ProductFormInputs = ({
   name,
@@ -29,9 +29,14 @@ const ProductFormInputs = ({
   setIsTrending,
   isNewArrival,
   setIsNewArrival,
-  imagePreview,
-  imageFile,
+  imagesList = [],
   handleImageChange,
+  handleRemoveImage,
+  handleMoveImage,
+  handleMakePrimary,
+  handleDragStart,
+  handleDragOver,
+  handleDrop,
   categories,
   isEdit,
   isSaving,
@@ -40,23 +45,97 @@ const ProductFormInputs = ({
 }) => {
   return (
     <form onSubmit={onSubmit} className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E6CCB2]/30 shadow-xl space-y-6 text-xs text-slate-800 font-sans">
-      {/* Banner Upload */}
-      <div className="space-y-2">
-        <label className="text-[10px] font-extrabold uppercase tracking-wider text-[#6E5A4F] block">Product Display Image</label>
-        <div className="flex flex-col sm:flex-row items-center gap-4 bg-[#FAF6F0]/20 p-4 rounded-2xl border border-[#E6CCB2]/15">
-          <div className="w-24 h-24 rounded-2xl bg-[#FAF6F0] border-2 border-dashed border-[#E6CCB2] flex items-center justify-center overflow-hidden shrink-0 shadow-xs">
-            {imagePreview ? (
-              <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-            ) : (
-              <Layers className="text-[#E6CCB2]/70 h-8 w-8" />
-            )}
-          </div>
-          
-          <label className="w-full sm:w-auto px-5 py-3 bg-[#FAF6F0] hover:bg-[#E6CCB2]/20 border border-[#E6CCB2]/40 rounded-xl cursor-pointer text-center text-xs text-[#6E5A4F] font-extrabold transition flex flex-col items-center justify-center gap-1">
-            <Upload size={16} className="text-[#a65827]" />
-            <span>{imageFile || imagePreview ? "Change Product Image" : "Upload Product Image"}</span>
-            <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+      {/* Product Images (Max 5) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-[10px] font-extrabold uppercase tracking-wider text-[#6E5A4F] block">
+            Product Images (Max 5) *
           </label>
+          <span className="text-[10px] font-bold text-[#a65827]">
+            {imagesList.length} / 5 Images
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 bg-[#FAF6F0]/20 p-4 rounded-2xl border border-[#E6CCB2]/15">
+          {imagesList.map((item, index) => (
+            <div
+              key={item.id}
+              draggable="true"
+              onDragStart={(e) => handleDragStart && handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver && handleDragOver(e)}
+              onDrop={(e) => handleDrop && handleDrop(e, index)}
+              className="relative aspect-square rounded-2xl bg-white border border-[#E6CCB2]/30 flex flex-col overflow-hidden group shadow-xs hover:shadow-md transition-all duration-300 cursor-grab active:cursor-grabbing"
+            >
+              {/* Image Preview */}
+              <img
+                src={item.url}
+                alt={`Product preview ${index + 1}`}
+                onClick={() => handleMakePrimary && handleMakePrimary(index)}
+                draggable="false"
+                className={`w-full h-full object-cover transition duration-300 ${index !== 0 ? "cursor-pointer hover:opacity-85" : ""}`}
+                title={index !== 0 ? "Click to set as Primary (move to 1st position)" : ""}
+              />
+
+              {/* Primary Badge */}
+              {index === 0 && (
+                <span className="absolute top-1.5 left-1.5 bg-emerald-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs">
+                  Primary
+                </span>
+              )}
+
+              {/* Remove X Button */}
+              <button
+                type="button"
+                onClick={() => handleRemoveImage(item.id)}
+                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition cursor-pointer hover:scale-105 active:scale-95"
+                title="Remove Image"
+              >
+                <X size={12} />
+              </button>
+
+              {/* Reordering Controls */}
+              <div className="absolute bottom-0 left-0 right-0 bg-[#3D271B]/85 backdrop-blur-xs py-1 px-2 flex justify-between items-center opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button
+                  type="button"
+                  onClick={() => handleMoveImage(index, "left")}
+                  disabled={index === 0}
+                  className="p-1 hover:bg-[#FAF6F0]/20 rounded text-white disabled:opacity-30 cursor-pointer flex items-center justify-center"
+                  title="Move Left"
+                >
+                  <ArrowLeft size={12} />
+                </button>
+                <span className="text-[9px] font-extrabold text-white">
+                  Pos {index + 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleMoveImage(index, "right")}
+                  disabled={index === imagesList.length - 1}
+                  className="p-1 hover:bg-[#FAF6F0]/20 rounded text-white disabled:opacity-30 cursor-pointer flex items-center justify-center"
+                  title="Move Right"
+                >
+                  <ArrowRight size={12} />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* Add Image Upload Button */}
+          {imagesList.length < 5 && (
+            <label className="aspect-square bg-white border-2 border-dashed border-[#E6CCB2]/60 hover:border-[#a65827] rounded-2xl flex flex-col items-center justify-center gap-1.5 cursor-pointer transition shadow-xs group">
+              <Upload size={20} className="text-[#a65827]/70 group-hover:text-[#a65827] transition" />
+              <span className="text-[10px] font-extrabold text-[#6E5A4F] group-hover:text-[#3D271B] transition text-center px-2">
+                Upload Image
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleImageChange}
+              />
+            </label>
+          )}
         </div>
       </div>
 
