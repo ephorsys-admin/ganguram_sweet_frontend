@@ -7,7 +7,7 @@ import BillingFilters from "../admin-components/Billing/BillingFilters";
 import BillingStats from "../admin-components/Billing/BillingStats";
 import BillingTable from "../admin-components/Billing/BillingTable";
 import BillDetailModal from "../admin-components/Billing/BillDetailModal";
-import { getBills, deleteBill } from "../../redux/features/bill/billThunk";
+import { getBills } from "../../redux/features/bill/billThunk";
 import { useToast } from "../../context/ToastContext";
 
 const AdminBilling = () => {
@@ -47,28 +47,7 @@ const AdminBilling = () => {
     setDetailOpen(true);
   };
 
-  const handleDeleteBill = async (billId) => {
-    if (!window.confirm("Are you sure you want to delete this bill? This will update the order status and remove the bill.")) {
-      return;
-    }
-    try {
-      const result = await dispatch(deleteBill(billId)).unwrap();
-      if (result.success) {
-        showToast("Bill deleted successfully.", "success");
-        setDetailOpen(false);
-        // Refresh the bills list
-        dispatch(getBills({
-          page,
-          limit: 10,
-          search,
-          status: statusFilter === "All" ? undefined : statusFilter,
-          billType: typeFilter === "All" ? undefined : typeFilter
-        }));
-      }
-    } catch (err) {
-      showToast(err.message || "Failed to delete bill.", "error");
-    }
-  };
+
 
   return (
     <div className="space-y-6 text-xs font-sans">
@@ -118,12 +97,10 @@ const AdminBilling = () => {
         />
       )}
 
-      {/* Bill Details Modal */}
       <BillDetailModal 
         isOpen={detailOpen} 
         bill={selectedBill} 
         onClose={() => setDetailOpen(false)} 
-        onDelete={handleDeleteBill}
         isSuperAdmin={isSuperAdmin}
       />
     </div>

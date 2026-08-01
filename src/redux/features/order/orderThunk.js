@@ -142,25 +142,7 @@ export const updateOrderStatus = createAsyncThunk(
   }
 );
 
-// ==========================================
-// Thunk: Request Delete Order (Admin)
-// ==========================================
-export const deleteOrderRequest = createAsyncThunk(
-  "order/deleteOrderRequest",
-  async ({ orderId, reason }, thunkAPI) => {
-    return await fetchWithAuth(
-      "/order/admin/delete-request",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ orderId, reason }),
-      },
-      thunkAPI
-    );
-  }
-);
+
 
 // ==========================================
 // Thunk: Generate Invoice (Admin)
@@ -177,47 +159,7 @@ export const generateInvoice = createAsyncThunk(
     );
   }
 );
-// ==========================================
-// Thunk: Get All Delete Requests (Super Admin)
-// ==========================================
-export const getAllDeleteRequests = createAsyncThunk(
-  "order/getAllDeleteRequests",
-  async (_, thunkAPI) => {
-    return await fetchWithAuth("/order/delete-request/all", { method: "GET" }, thunkAPI);
-  }
-);
 
-// ==========================================
-// Thunk: Approve Delete Request (Super Admin)
-// ==========================================
-export const approveDeleteRequest = createAsyncThunk(
-  "order/approveDeleteRequest",
-  async (requestId, thunkAPI) => {
-    return await fetchWithAuth(
-      `/order/delete-request/approve/${requestId}`,
-      {
-        method: "PATCH",
-      },
-      thunkAPI
-    );
-  }
-);
-
-// ==========================================
-// Thunk: Reject Delete Request (Super Admin)
-// ==========================================
-export const rejectDeleteRequest = createAsyncThunk(
-  "order/rejectDeleteRequest",
-  async (requestId, thunkAPI) => {
-    return await fetchWithAuth(
-      `/order/delete-request/reject/${requestId}`,
-      {
-        method: "PATCH",
-      },
-      thunkAPI
-    );
-  }
-);
 
 // ==========================================
 // Thunk: Create Public Order (Customer Front)

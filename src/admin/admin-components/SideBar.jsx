@@ -28,7 +28,6 @@ const SideBar = ({ sidebarOpen, setSidebarOpen }) => {
 
   const dynamicNavItems = [
     ...NAV_ITEMS,
-    ...(isSuperAdmin ? [{ path: "/admin/delete-requests", label: "Delete Requests", icon: Trash2 }] : []),
   ];
 
   const triggerLogout = () => {

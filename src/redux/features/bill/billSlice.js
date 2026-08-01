@@ -4,7 +4,7 @@ import {
   getSingleBill,
   createWalkinBill,
   createOrderBill,
-  deleteBill,
+  getCustomerSummary,
 } from "./billThunk";
 
 const initialState = {
@@ -13,6 +13,8 @@ const initialState = {
   currentBill: null,
   isLoading: false,
   error: null,
+  customerSummary: null,
+  customerSummaryLoading: false,
 };
 
 const billSlice = createSlice({
@@ -24,6 +26,9 @@ const billSlice = createSlice({
     },
     clearCurrentBill: (state) => {
       state.currentBill = null;
+    },
+    clearCustomerSummary: (state) => {
+      state.customerSummary = null;
     },
   },
   extraReducers: (builder) => {
@@ -93,27 +98,23 @@ const billSlice = createSlice({
         state.error = action.payload?.message || "Failed to generate order bill";
       })
 
-      // deleteBill
-      .addCase(deleteBill.pending, (state) => {
-        state.isLoading = true;
+      // getCustomerSummary
+      .addCase(getCustomerSummary.pending, (state) => {
+        state.customerSummaryLoading = true;
         state.error = null;
       })
-      .addCase(deleteBill.fulfilled, (state, action) => {
-        state.isLoading = false;
-        const deletedId = action.meta.arg;
-        state.bills = state.bills.filter((b) => b._id !== deletedId);
-        if (state.currentBill && state.currentBill._id === deletedId) {
-          state.currentBill = null;
-        }
+      .addCase(getCustomerSummary.fulfilled, (state, action) => {
+        state.customerSummaryLoading = false;
+        state.customerSummary = action.payload.data || null;
         state.error = null;
       })
-      .addCase(deleteBill.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload?.message || "Failed to delete bill";
+      .addCase(getCustomerSummary.rejected, (state, action) => {
+        state.customerSummaryLoading = false;
+        state.error = action.payload?.message || "Failed to load customer summary";
       });
   },
 });
 
-export const { clearBillError, clearCurrentBill } = billSlice.actions;
+export const { clearBillError, clearCurrentBill, clearCustomerSummary } = billSlice.actions;
 
 export default billSlice.reducer;

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, ClipboardList, Loader2, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { createWalkinBill, createOrderBill } from "../../redux/features/bill/billThunk";
+import { createWalkinBill, createOrderBill, getCustomerSummary } from "../../redux/features/bill/billThunk";
+import { clearCustomerSummary } from "../../redux/features/bill/billSlice";
 import { getSingleOrder, updateOrderStatus } from "../../redux/features/order/orderThunk";
 import { getProducts } from "../../redux/features/product/productThunk";
 import { useToast } from "../../context/ToastContext";
@@ -17,7 +18,7 @@ const AdminCreateBill = () => {
 
   // Redux state
   const { products = [] } = useSelector((state) => state.product);
-  const { isLoading: isSaving } = useSelector((state) => state.bill);
+  const { isLoading: isSaving, customerSummary, customerSummaryLoading } = useSelector((state) => state.bill);
 
   // Customer Details State
   const [customerName, setCustomerName] = useState("");
@@ -82,6 +83,31 @@ const AdminCreateBill = () => {
         });
     }
   }, [orderId, dispatch]);
+
+  // Fetch customer purchase summary when a valid 10-digit mobile number is entered
+  useEffect(() => {
+    const mobileTrimmed = mobile.trim();
+    if (/^[6-9]\d{9}$/.test(mobileTrimmed)) {
+      dispatch(getCustomerSummary(mobileTrimmed))
+        .unwrap()
+        .then((result) => {
+          if (result.success && result.data) {
+            const summary = result.data;
+            if (summary.customerName && !customerName.trim()) {
+              setCustomerName(summary.customerName);
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch customer summary:", err);
+        });
+    } else {
+      dispatch(clearCustomerSummary());
+    }
+    return () => {
+      dispatch(clearCustomerSummary());
+    };
+  }, [mobile, dispatch]);
 
   const handleProductChange = (e) => {
     const prodId = e.target.value;
@@ -352,6 +378,53 @@ const AdminCreateBill = () => {
               className="block w-full px-3.5 py-2.5 bg-[#FAF6F0]/40 border border-[#E6CCB2]/30 rounded-xl text-xs text-[#3D271B] font-semibold focus:outline-none"
             />
           </div>
+
+          {/* Returning Customer Summary Info */}
+          {customerSummaryLoading && (
+            <div className="flex items-center gap-2 text-xs text-[#DFA250] font-semibold mt-2 animate-pulse">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Fetching customer history...</span>
+            </div>
+          )}
+
+          {customerSummary && customerSummary.totalBills > 0 && (
+            <div className="mt-4 p-4 bg-[#FAF6F0] border border-[#DFA250]/20 rounded-2xl space-y-2.5">
+              <div className="flex items-center gap-2 text-[#a65827]">
+                <ShoppingBag size={14} className="animate-bounce" />
+                <span className="font-extrabold text-[10px] uppercase tracking-wider">Returning Customer Purchase Summary</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-1 text-xs">
+                <div className="bg-white p-2.5 rounded-xl border border-[#E6CCB2]/20 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                  <p className="text-[#6E5A4F] font-semibold text-[10px] uppercase tracking-wider">Total Purchase Visits</p>
+                  <p className="text-[#3D271B] font-extrabold text-[15px] mt-0.5">{customerSummary.totalBills}</p>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-[#E6CCB2]/20 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                  <p className="text-[#6E5A4F] font-semibold text-[10px] uppercase tracking-wider">Total Amount Spent</p>
+                  <p className="text-[#3D271B] font-extrabold text-[15px] mt-0.5 text-green-700">₹{Number(customerSummary.totalPurchase || 0).toFixed(2)}</p>
+                </div>
+                {customerSummary.lastPurchaseDate && (
+                  <div className="bg-white p-2.5 rounded-xl border border-[#E6CCB2]/20 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                    <p className="text-[#6E5A4F] font-semibold text-[10px] uppercase tracking-wider">Last Purchase Date</p>
+                    <p className="text-[#3D271B] font-bold text-[13px] mt-0.5">
+                      {new Date(customerSummary.lastPurchaseDate).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                )}
+                {customerSummary.lastInvoice && (
+                  <div className="bg-white p-2.5 rounded-xl border border-[#E6CCB2]/20 shadow-[0_2px_8px_rgba(0,0,0,0.02)]">
+                    <p className="text-[#6E5A4F] font-semibold text-[10px] uppercase tracking-wider">Last Invoice</p>
+                    <p className="text-[#3D271B] font-bold font-mono text-[13px] mt-0.5 text-[#a65827]">
+                      #{customerSummary.lastInvoice}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Items Section */}

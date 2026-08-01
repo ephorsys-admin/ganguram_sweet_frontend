@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { ArrowLeft, User, Calendar, MapPin, ShoppingBag, Trash2, FileText, Loader2, Navigation } from "lucide-react";
-import { getSingleOrder, deleteOrderRequest, approveDeleteRequest } from "../../redux/features/order/orderThunk";
+import { getSingleOrder } from "../../redux/features/order/orderThunk";
 import { getSingleBill } from "../../redux/features/bill/billThunk";
 import { useToast } from "../../context/ToastContext";
 
@@ -65,37 +65,7 @@ const AdminOrderDetail = () => {
     }
   };
 
-  const handleDeleteOrder = async () => {
-    if (!order) return;
-    const actionText = isSuperAdmin ? "deleting" : "requesting deletion of";
-    const reason = window.prompt(`Please enter the reason for ${actionText} this order (minimum 5 characters):`);
-    if (reason === null) return;
 
-    if (reason.trim().length < 5) {
-      showToast("Delete reason must be at least 5 characters.", "error");
-      return;
-    }
-
-    try {
-      const resultAction = await dispatch(deleteOrderRequest({ orderId: order._id, reason: reason.trim() })).unwrap();
-      if (resultAction.success) {
-        if (isSuperAdmin) {
-          const requestId = resultAction.data?._id;
-          if (requestId) {
-            await dispatch(approveDeleteRequest(requestId)).unwrap();
-            showToast("Order deleted successfully!", "success");
-          } else {
-            showToast("Order deletion request created, but request ID was not found.", "error");
-          }
-        } else {
-          showToast("Order delete request submitted to Super Admin successfully!", "success");
-        }
-        navigate("/admin/orders");
-      }
-    } catch (err) {
-      showToast(err.message || "Failed to process delete operation", "error");
-    }
-  };
 
   if (isLoading || !order) {
     return (
@@ -315,13 +285,6 @@ const AdminOrderDetail = () => {
               >
                 {invoiceLoading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
                 {order.billGenerated ? "View Invoice PDF" : "Generate Invoice Bill"}
-              </button>
-
-              <button
-                onClick={handleDeleteOrder}
-                className="w-full px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-650 rounded-xl font-bold flex items-center justify-center gap-1.5 transition cursor-pointer text-xs shadow-xs"
-              >
-                <Trash2 size={14} /> {isSuperAdmin ? "Delete Order" : "Request Delete"}
               </button>
             </div>
           </div>
