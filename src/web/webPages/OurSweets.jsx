@@ -1012,7 +1012,7 @@ const OurSweets = () => {
         </div>
 
         {/* ShopByCategory-style auto-scroll gradient pills */}
-        <div className="w-full py-2 border-b border-[#E6CCB2]/20">
+        <div className="w-full py-2 border-b border-brand-accent/20">
           <CategoryScrollRow
             categories={categories}
             selectedCategory={selectedCategory}
@@ -1022,7 +1022,7 @@ const OurSweets = () => {
 
         {isLoading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-10 w-10 text-[#DFA250] animate-spin" />
+            <Loader2 className="h-10 w-10 text-brand-gold animate-spin" />
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-16 space-y-2">
@@ -1033,7 +1033,7 @@ const OurSweets = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-4 pt-4"
+            className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 lg:grid-cols-5 pt-4"
           >
             {filteredProducts.map((product) => (
               <ProductCard

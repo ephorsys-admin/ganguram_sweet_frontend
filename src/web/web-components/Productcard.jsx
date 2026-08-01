@@ -57,7 +57,7 @@ const ProductCard = ({ product, onViewDetails }) => {
       {/* Image area */}
       <div
         onClick={handleDetailsClick}
-        className="relative aspect-square w-full bg-[#FAF6F0] flex items-center justify-center cursor-pointer overflow-hidden"
+        className="relative aspect-square w-full bg-brand-cream flex items-center justify-center cursor-pointer overflow-hidden"
       >
         {imageUrl ? (
           <img
