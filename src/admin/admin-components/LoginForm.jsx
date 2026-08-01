@@ -71,10 +71,10 @@ const LoginForm = ({ onForgotClick }) => {
       <div>
         {/* Mobile Header Logo */}
         <div className="flex lg:hidden items-center justify-center space-x-2 mb-6">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-[#DFA250] to-[#B0652F] flex items-center justify-center shadow-md">
-            <Sparkles className="h-4 w-4 text-[#FAF6F0]" />
+          <div className="h-8 w-8 rounded-lg bg-linear-to-tr from-[#DFA250] to-[#B0652F] flex items-center justify-center shadow-md">
+            <Sparkles className="h-4 w-4 text-brand-cream" />
           </div>
-          <span className="text-[#3D271B] font-serif font-bold text-base tracking-wider">GANGURAM</span>
+          <span className="text-brand-dark font-serif font-bold text-base tracking-wider">GANGURAM</span>
         </div>
 
         <div className="text-center md:text-left mb-8">

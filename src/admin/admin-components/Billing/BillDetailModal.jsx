@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Download, Printer, X, Receipt, Calendar, User, PhoneCall, MapPin, ShoppingBag, Trash2 } from "lucide-react";
+import { Download, X, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function BillDetailModal({ isOpen, bill, onClose, onDelete, isSuperAdmin }) {
@@ -67,10 +67,6 @@ export default function BillDetailModal({ isOpen, bill, onClose, onDelete, isSup
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   // Generate QR verification code content
   const qrData = JSON.stringify({
     invoice: bill.invoiceNumber,
@@ -80,14 +76,14 @@ export default function BillDetailModal({ isOpen, bill, onClose, onDelete, isSup
   });
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(qrData)}`;
 
-  const dateStr = bill.generatedAt || bill.createdAt 
+  const dateStr = bill.generatedAt || bill.createdAt
     ? new Date(bill.generatedAt || bill.createdAt).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      })
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    })
     : "—";
 
   return (
@@ -240,7 +236,7 @@ export default function BillDetailModal({ isOpen, bill, onClose, onDelete, isSup
                     <strong>Address:</strong> {bill.address}
                   </div>
                 )}
-                
+
                 {/* QR Code Validation */}
                 <div className="border border-[#E6CCB2]/20 rounded-xl p-3 flex items-center gap-3 bg-white shadow-xs max-w-[245px]">
                   <img
@@ -303,13 +299,6 @@ export default function BillDetailModal({ isOpen, bill, onClose, onDelete, isSup
               className="px-4 py-2 border border-slate-200 text-slate-650 font-bold text-xs rounded-xl hover:bg-slate-50 cursor-pointer active:scale-95 transition"
             >
               Close
-            </button>
-
-            <button
-              onClick={handlePrint}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-bold text-xs rounded-xl cursor-pointer flex items-center gap-1.5 active:scale-95 transition"
-            >
-              <Printer className="w-4 h-4 text-slate-600" /> Print Receipt
             </button>
 
             <button

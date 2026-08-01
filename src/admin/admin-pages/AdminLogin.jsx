@@ -109,7 +109,6 @@ const AdminLogin = () => {
           </motion.div>
           
         </div>
-
       </div>
     </div>
   );

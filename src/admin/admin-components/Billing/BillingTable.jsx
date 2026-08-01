@@ -1,4 +1,4 @@
-import { Calendar, Eye, Download, Receipt, ChevronRight } from "lucide-react";
+import { Calendar, Eye, Download, Receipt, X, FileText } from "lucide-react";
 import { useState } from "react";
 
 export default function BillingTable({
@@ -10,6 +10,7 @@ export default function BillingTable({
   statusFilter,
 }) {
   const [downloadingId, setDownloadingId] = useState(null);
+  const [previewBill, setPreviewBill] = useState(null); // 👈 new state for preview modal
 
   const displayPrice = (val) => {
     return typeof val === "number" ? val.toFixed(2) : Number(val || 0).toFixed(2);
@@ -66,12 +67,22 @@ export default function BillingTable({
       window.URL.revokeObjectURL(blobUrl);
     } catch (err) {
       console.error("PDF download failed", err);
-      // Fallback
       window.open(url, "_blank", "noopener,noreferrer");
     } finally {
       setDownloadingId(null);
     }
   };
+
+  // 👇 Opens the PDF preview modal
+  const handlePreview = (bill) => {
+    if (!bill?.invoiceUrl) {
+      alert("Invoice PDF is not available for this bill yet.");
+      return;
+    }
+    setPreviewBill(bill);
+  };
+
+  const closePreview = () => setPreviewBill(null);
 
   return (
     <div className="w-full space-y-4">
@@ -89,25 +100,22 @@ export default function BillingTable({
         </div>
       ) : (
         <>
-          {/* ========================================================== */}
-          {/* Mobile Card Grid View (Shown below 1024px lg viewport)     */}
-          {/* ========================================================== */}
+          {/* Mobile Card Grid View */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 lg:hidden">
             {bills.map((bill) => {
               const dateStr = bill.generatedAt || bill.createdAt
                 ? new Date(bill.generatedAt || bill.createdAt).toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric"
-                  })
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric"
+                })
                 : "—";
 
               return (
-                <div 
-                  key={bill._id} 
+                <div
+                  key={bill._id}
                   className="bg-white p-5 rounded-3xl border border-[#E6CCB2]/20 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between gap-4"
                 >
-                  {/* Card Header: Invoice No & Bill Type */}
                   <div className="flex items-center justify-between">
                     <span className="font-bold font-mono text-[#a65827] bg-[#FAF6F0] px-2.5 py-1 rounded-lg text-[10px] tracking-wider uppercase">
                       {bill.invoiceNumber || `ID: ${bill._id.substring(18)}`}
@@ -117,7 +125,6 @@ export default function BillingTable({
                     </span>
                   </div>
 
-                  {/* Main Content: Customer & Price info */}
                   <div className="space-y-3">
                     <div className="space-y-0.5">
                       <h4 className="font-extrabold text-sm sm:text-base text-[#3D271B] leading-tight">
@@ -138,21 +145,28 @@ export default function BillingTable({
                     </div>
                   </div>
 
-                  {/* Card Footer: Status & Actions */}
                   <div className="flex items-center justify-between border-t border-[#FAF6F0] pt-3 gap-2">
                     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusStyle(bill.status)}`}>
                       {bill.status}
                     </span>
 
                     <div className="flex items-center gap-1.5">
-                      <button 
+                      <button
                         onClick={() => onViewDetails(bill)}
                         className="p-2 text-[#a65827] hover:text-[#3D271B] bg-[#FAF6F0] rounded-xl transition cursor-pointer"
                         title="View Details"
                       >
                         <Eye size={14} />
                       </button>
-                      <button 
+                      {/* 👇 New Preview button */}
+                      <button
+                        onClick={() => handlePreview(bill)}
+                        className="p-2 text-blue-600 hover:text-blue-700 bg-blue-50 rounded-xl transition cursor-pointer"
+                        title="Preview Invoice PDF"
+                      >
+                        <FileText size={14} />
+                      </button>
+                      <button
                         onClick={() => handleDownloadPdf(bill)}
                         disabled={downloadingId === bill._id}
                         className="p-2 text-emerald-650 hover:text-emerald-700 bg-emerald-50 border border-transparent rounded-xl transition cursor-pointer disabled:opacity-50"
@@ -167,9 +181,7 @@ export default function BillingTable({
             })}
           </div>
 
-          {/* ========================================================== */}
-          {/* Desktop Table View (Shown on lg viewport and above)         */}
-          {/* ========================================================== */}
+          {/* Desktop Table View */}
           <div className="bg-white rounded-3xl border border-[#E6CCB2]/30 shadow-xs overflow-hidden text-sm hidden lg:block">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1000px] text-left border-collapse">
@@ -186,7 +198,6 @@ export default function BillingTable({
                 <tbody className="divide-y divide-[#FAF6F0] text-sm font-semibold text-[#3D271B]">
                   {bills.map((bill) => (
                     <tr key={bill._id} className="hover:bg-[#FAF6F0]/15 transition-colors">
-                      {/* Invoice Info */}
                       <td className="px-6 py-4">
                         <div className="font-extrabold text-[#a65827] select-all font-mono">
                           {bill.invoiceNumber || bill._id.substring(18)}
@@ -199,7 +210,6 @@ export default function BillingTable({
                         </div>
                       </td>
 
-                      {/* Customer Details */}
                       <td className="px-6 py-4">
                         <div className="font-bold text-[#3D271B]">{bill.customerName}</div>
                         <div className="text-xs text-[#6E5A4F]/70 font-mono mt-1">
@@ -207,14 +217,12 @@ export default function BillingTable({
                         </div>
                       </td>
 
-                      {/* Bill Type */}
                       <td className="px-6 py-4">
                         <span className="inline-flex px-2 py-0.5 bg-[#FAF6F0] border border-[#E6CCB2]/30 rounded-md text-[10px] text-[#6E5A4F] font-bold uppercase">
                           {bill.billType}
                         </span>
                       </td>
 
-                      {/* Amount Details */}
                       <td className="px-6 py-4 text-right">
                         <div className="font-extrabold text-[#3D271B] font-mono">
                           ₹{displayPrice(bill.finalAmount)}
@@ -224,7 +232,6 @@ export default function BillingTable({
                         </div>
                       </td>
 
-                      {/* Status */}
                       <td className="px-6 py-4">
                         <div className="flex justify-center">
                           <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${getStatusStyle(bill.status)}`}>
@@ -233,7 +240,6 @@ export default function BillingTable({
                         </div>
                       </td>
 
-                      {/* Actions */}
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
@@ -242,6 +248,14 @@ export default function BillingTable({
                             title="View Receipt Details"
                           >
                             <Eye className="w-4 h-4" />
+                          </button>
+                          {/* 👇 New Preview button */}
+                          <button
+                            onClick={() => handlePreview(bill)}
+                            className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 border border-transparent rounded-xl transition cursor-pointer"
+                            title="Preview Invoice PDF"
+                          >
+                            <FileText className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDownloadPdf(bill)}
@@ -283,6 +297,51 @@ export default function BillingTable({
             >
               Next
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================== */}
+      {/* Invoice PDF Preview Modal (jaisa screenshot mein hai)      */}
+      {/* ========================================================== */}
+      {previewBill && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-4xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[#E6CCB2]/30 bg-[#FAF6F0]/40">
+              <div>
+                <h3 className="font-extrabold text-[#3D271B] text-sm">Invoice Preview</h3>
+                <p className="text-[11px] text-[#6E5A4F] font-mono">
+                  {previewBill.invoiceNumber || `Invoice_${previewBill._id}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDownloadPdf(previewBill)}
+                  disabled={downloadingId === previewBill._id}
+                  className="p-2 text-emerald-600 hover:text-emerald-700 bg-emerald-50 rounded-xl transition cursor-pointer disabled:opacity-50"
+                  title="Download PDF"
+                >
+                  <Download size={16} />
+                </button>
+                <button
+                  onClick={closePreview}
+                  className="p-2 text-[#3D271B] hover:bg-[#FAF6F0] rounded-xl transition cursor-pointer"
+                  title="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* PDF Viewer Body */}
+            <div className="flex-1 bg-[#525659]">
+              <iframe
+                src={previewBill.invoiceUrl}
+                title="Invoice Preview"
+                className="w-full h-full border-0"
+              />
+            </div>
           </div>
         </div>
       )}
