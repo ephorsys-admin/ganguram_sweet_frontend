@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { ArrowLeft, User, Calendar, MapPin, ShoppingBag, Trash2, FileText, Loader2, ArrowRight } from "lucide-react";
+import { ArrowLeft, User, Calendar, MapPin, ShoppingBag, Trash2, FileText, Loader2, Navigation } from "lucide-react";
 import { getSingleOrder, deleteOrderRequest, approveDeleteRequest } from "../../redux/features/order/orderThunk";
 import { getSingleBill } from "../../redux/features/bill/billThunk";
 import { useToast } from "../../context/ToastContext";
@@ -46,7 +46,7 @@ const AdminOrderDetail = () => {
     setInvoiceLoading(true);
     try {
       if (!order.billGenerated || !order.bill) {
-        // Redirect to orders page with parameter to open bill creation modal
+        // Bill generation flow ke liye orders page pe redirect, modal wahin open hoga
         showToast("Generating bill for order. Redirecting...", "info");
         navigate(`/admin/orders?generateBill=${order._id}`);
         return;
@@ -69,7 +69,7 @@ const AdminOrderDetail = () => {
     if (!order) return;
     const actionText = isSuperAdmin ? "deleting" : "requesting deletion of";
     const reason = window.prompt(`Please enter the reason for ${actionText} this order (minimum 5 characters):`);
-    if (reason === null) return; 
+    if (reason === null) return;
 
     if (reason.trim().length < 5) {
       showToast("Delete reason must be at least 5 characters.", "error");
@@ -106,15 +106,20 @@ const AdminOrderDetail = () => {
     );
   }
 
-  const dateStr = order.createdAt 
+  const dateStr = order.createdAt
     ? new Date(order.createdAt).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      })
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : "—";
+
+  // subTotal/deliveryCharge backend se seedhe aa rahe hain, ab in hi ko use karenge
+  // (pehle hardcoded ₹0 tax dikha rahe the, ab actual delivery charge dikhega)
+  const subTotal = order.subTotal ?? order.totalAmount;
+  const deliveryCharge = order.deliveryCharge ?? 0;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -134,13 +139,15 @@ const AdminOrderDetail = () => {
                 {order.orderNumber || order._id.substring(18)}
               </span>
             </h1>
-            <p className="text-[10px] sm:text-xs text-[#6E5A4F] font-sans">
-              Placed on {dateStr}
-            </p>
+            <p className="text-[10px] sm:text-xs text-[#6E5A4F] font-sans">Placed on {dateStr}</p>
           </div>
         </div>
         <div>
-          <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wider ${getStatusStyle(order.orderStatus)}`}>
+          <span
+            className={`inline-block px-3 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wider ${getStatusStyle(
+              order.orderStatus
+            )}`}
+          >
             {order.orderStatus}
           </span>
         </div>
@@ -172,8 +179,15 @@ const AdminOrderDetail = () => {
                 <Calendar size={14} className="text-[#a65827]" /> Order Summary
               </h4>
               <div className="space-y-1.5 text-xs font-semibold">
-                <p className="text-[#6E5A4F]">Payment Status: <span className="text-[#3D271B] font-bold">{order.paymentStatus}</span></p>
-                <p className="text-[#6E5A4F]">Bill Generated: <span className={order.billGenerated ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>{order.billGenerated ? "Yes" : "No"}</span></p>
+                <p className="text-[#6E5A4F]">
+                  Payment Status: <span className="text-[#3D271B] font-bold">{order.paymentStatus}</span>
+                </p>
+                <p className="text-[#6E5A4F]">
+                  Bill Generated:{" "}
+                  <span className={order.billGenerated ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>
+                    {order.billGenerated ? "Yes" : "No"}
+                  </span>
+                </p>
               </div>
             </div>
           </div>
@@ -185,6 +199,21 @@ const AdminOrderDetail = () => {
             </h4>
             <div className="text-xs space-y-3">
               <p className="text-[#6E5A4F] leading-relaxed font-semibold">{order.deliveryAddress}</p>
+
+              {/* landmark aur distance - dono response me the but UI me nahi the */}
+              <div className="flex flex-wrap items-center gap-3">
+                {order.landmark && order.landmark.toLowerCase() !== "na" && (
+                  <span className="text-[10px] text-[#6E5A4F] bg-[#FAF6F0]/50 px-2.5 py-1 rounded-lg font-bold border border-[#E6CCB2]/15">
+                    Landmark: {order.landmark}
+                  </span>
+                )}
+                {typeof order.distanceKm === "number" && (
+                  <span className="text-[10px] text-[#a65827] bg-amber-50 px-2.5 py-1 rounded-lg font-bold border border-[#E6CCB2]/15 flex items-center gap-1">
+                    <Navigation size={10} /> {order.distanceKm} km from store
+                  </span>
+                )}
+              </div>
+
               {order.specialInstructions && (
                 <div className="text-[10px] text-[#a65827] italic bg-[#FAF6F0]/30 p-3 rounded-xl border border-[#E6CCB2]/15">
                   <strong>Special Instructions:</strong> "{order.specialInstructions}"
@@ -210,7 +239,19 @@ const AdminOrderDetail = () => {
                 </thead>
                 <tbody className="divide-y divide-[#FAF6F0] text-[#3D271B]">
                   <tr>
-                    <td className="px-4 py-4 font-bold">{order.productName}</td>
+                    <td className="px-4 py-4 font-bold">
+                      <div className="flex items-center gap-3">
+                        {/* productImage seedhe order response me aa raha hai, product.images[0].url ka fallback bhi rakh diya */}
+                        {(order.productImage || order.product?.images?.[0]?.url) && (
+                          <img
+                            src={order.productImage || order.product.images[0].url}
+                            alt={order.productName}
+                            className="w-10 h-10 rounded-lg object-cover border border-[#E6CCB2]/30 shrink-0"
+                          />
+                        )}
+                        <span>{order.productName}</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-4 text-center font-bold font-mono text-slate-700">{order.quantity}</td>
                     <td className="px-4 py-4 text-right font-mono text-slate-700">₹{order.productPrice}</td>
                     <td className="px-4 py-4 text-right font-extrabold font-mono text-[#a65827]">₹{order.totalAmount}</td>
@@ -225,16 +266,18 @@ const AdminOrderDetail = () => {
         <div className="space-y-6">
           {/* Calculations Summary */}
           <div className="bg-[#FAF6F0]/45 p-6 rounded-3xl border border-[#E6CCB2]/30 shadow-md space-y-4">
-            <h4 className="font-extrabold text-[#3D271B] border-b border-[#E6CCB2]/25 pb-2 text-xs uppercase tracking-wider">Billing summary</h4>
+            <h4 className="font-extrabold text-[#3D271B] border-b border-[#E6CCB2]/25 pb-2 text-xs uppercase tracking-wider">
+              Billing summary
+            </h4>
 
             <div className="space-y-2.5 text-xs font-semibold text-[#6E5A4F]">
               <div className="flex justify-between items-center">
                 <span>Subtotal:</span>
-                <span className="font-mono">₹{order.totalAmount}</span>
+                <span className="font-mono">₹{subTotal}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span>Tax & Shipping:</span>
-                <span className="font-mono">₹0</span>
+                <span>Delivery Charge:</span>
+                <span className="font-mono">₹{deliveryCharge}</span>
               </div>
               <div className="flex justify-between items-center pt-2.5 border-t border-[#E6CCB2]/25 text-sm font-extrabold text-[#3D271B]">
                 <span>Grand Total:</span>
@@ -246,9 +289,13 @@ const AdminOrderDetail = () => {
           {/* Invoice Info Card */}
           {order.invoiceNumber && (
             <div className="bg-white p-5 rounded-3xl border border-[#E6CCB2]/30 shadow-md space-y-2 text-xs">
-              <h4 className="font-extrabold text-[#3D271B] border-b border-[#FAF6F0] pb-2 uppercase tracking-wider text-[10px]">Invoice Record</h4>
+              <h4 className="font-extrabold text-[#3D271B] border-b border-[#FAF6F0] pb-2 uppercase tracking-wider text-[10px]">
+                Invoice Record
+              </h4>
               <div className="space-y-1 text-[#6E5A4F] font-semibold">
-                <p>Invoice No: <span className="text-[#3D271B] font-mono">{order.invoiceNumber}</span></p>
+                <p>
+                  Invoice No: <span className="text-[#3D271B] font-mono">{order.invoiceNumber}</span>
+                </p>
                 {order.invoiceGeneratedAt && <p>Date: {new Date(order.invoiceGeneratedAt).toLocaleDateString()}</p>}
               </div>
             </div>
@@ -256,19 +303,17 @@ const AdminOrderDetail = () => {
 
           {/* Quick Actions Panel */}
           <div className="bg-white p-6 rounded-3xl border border-[#E6CCB2]/30 shadow-md space-y-4">
-            <h4 className="font-extrabold text-[#3D271B] border-b border-[#FAF6F0] pb-2 text-xs uppercase tracking-wider">Management Actions</h4>
-            
+            <h4 className="font-extrabold text-[#3D271B] border-b border-[#FAF6F0] pb-2 text-xs uppercase tracking-wider">
+              Management Actions
+            </h4>
+
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleInvoiceClick}
                 disabled={invoiceLoading}
                 className="w-full px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-[#a65827] rounded-xl font-bold flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 text-xs shadow-xs"
               >
-                {invoiceLoading ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <FileText size={14} />
-                )}
+                {invoiceLoading ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
                 {order.billGenerated ? "View Invoice PDF" : "Generate Invoice Bill"}
               </button>
 
