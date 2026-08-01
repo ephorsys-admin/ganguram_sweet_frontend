@@ -142,13 +142,15 @@ export const createOrderBill = createAsyncThunk(
   }
 );
 
+
+
 // ==========================================
-// Thunk: Delete Bill (Super Admin Only)
+// Thunk: Get Customer Purchase Summary (Admin)
 // ==========================================
-export const deleteBill = createAsyncThunk(
-  "bill/deleteBill",
-  async (billId, thunkAPI) => {
-    return await fetchWithAuth(`/bill/${billId}`, { method: "DELETE" }, thunkAPI);
+export const getCustomerSummary = createAsyncThunk(
+  "bill/getCustomerSummary",
+  async (mobile, thunkAPI) => {
+    return await fetchWithAuth(`/bill/customer-summary/${mobile}`, { method: "GET" }, thunkAPI);
   }
 );
 

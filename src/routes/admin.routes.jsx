@@ -15,7 +15,6 @@ const AdminOrderDetail = lazy(() => import("../admin/admin-pages/AdminOrderDetai
 const AdminInquiries = lazy(() => import("../admin/admin-pages/AdminInquiries"));
 const AdminBilling = lazy(() => import("../admin/admin-pages/AdminBilling"));
 const AdminCreateBill = lazy(() => import("../admin/admin-pages/AdminCreateBill"));
-const AdminDeleteRequests = lazy(() => import("../admin/admin-pages/AdminDeleteRequests"));
 const AdminAdvertisements = lazy(() => import("../admin/admin-pages/AdminAdvertisements"));
 const AdminAdvertisementForm = lazy(() => import("../admin/admin-pages/AdminAdvertisementForm"));
 
@@ -88,11 +87,7 @@ const AdminRoutes = (
           path="inquiries"
           element={<AdminInquiries />}
         />
-        {/* Delete Requests */}
-        <Route
-          path="delete-requests"
-          element={<AdminDeleteRequests />}
-        />
+
         {/* Advertisements */}
         <Route
           path="advertisements"
