@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import {
   TrendingUp,
   Layers,
@@ -12,109 +13,63 @@ import {
   AlertCircle,
   MessageSquare,
   CalendarDays,
+  Loader2,
 } from "lucide-react";
 import { motion } from "framer-motion";
-
-// ---------------------------------------------------------------------------
-// DUMMY DATA (no Redux for now) — swap these for real API/Redux calls later.
-// The shape below matches the stats payload you shared, so wiring in the
-// real API later is just a matter of replacing this block with a fetch/dispatch.
-// ---------------------------------------------------------------------------
-
-const DUMMY_ADMIN = { name: "Admin User", role: "super_admin" };
-
-const DUMMY_STATS = {
-  totalSales: 23626,
-  todaySales: 1216,
-  totalCategory: 7,
-  totalProduct: 8,
-  todayOrders: 2,
-  todayInquiries: 0,
-  weeklySales: [
-    { day: "Sun", sales: 0 },
-    { day: "Mon", sales: 0 },
-    { day: "Tue", sales: 0 },
-    { day: "Wed", sales: 7550 },
-    { day: "Thu", sales: 5300 },
-    { day: "Fri", sales: 9560 },
-    { day: "Sat", sales: 1216 },
-  ],
-  monthlySales: [
-    { month: "Jan", sales: 0 },
-    { month: "Feb", sales: 0 },
-    { month: "Mar", sales: 0 },
-    { month: "Apr", sales: 0 },
-    { month: "May", sales: 0 },
-    { month: "Jun", sales: 0 },
-    { month: "Jul", sales: 22410 },
-    { month: "Aug", sales: 1216 },
-    { month: "Sep", sales: 0 },
-    { month: "Oct", sales: 0 },
-    { month: "Nov", sales: 0 },
-    { month: "Dec", sales: 0 },
-  ],
-};
-
-const DUMMY_ORDERS = [
-  { id: "ORD-1001", customerName: "Rajesh Kumar", amount: 1480, itemsCount: 3, status: "Processing", date: "2026-07-28" },
-  { id: "ORD-1002", customerName: "Priya Sharma", amount: 920, itemsCount: 2, status: "Completed", date: "2026-07-27" },
-  { id: "ORD-1003", customerName: "Amit Das", amount: 450, itemsCount: 1, status: "Pending", date: "2026-07-27" },
-  { id: "ORD-1004", customerName: "Sneha Sen", amount: 2350, itemsCount: 5, status: "Completed", date: "2026-07-26" },
-  { id: "ORD-1005", customerName: "Rahul Verma", amount: 890, itemsCount: 2, status: "Pending", date: "2026-07-25" },
-];
-
-const DUMMY_INQUIRIES = [
-  {
-    _id: "inq1",
-    name: "Sunita Patra",
-    email: "sunita.patra@example.com",
-    phone: "9876543210",
-    reason: "Need 50 boxes of Chhena Poda for a wedding reception next month.",
-    status: "Pending",
-    createdAt: "2026-07-30T10:00:00.000Z",
-    isDeleted: false,
-  },
-  {
-    _id: "inq2",
-    name: "Manoj Mishra",
-    email: "manoj.mishra@example.com",
-    phone: "9123456780",
-    reason: "Do you offer bulk catering discounts for corporate orders?",
-    status: "Resolved",
-    createdAt: "2026-07-29T14:30:00.000Z",
-    isDeleted: false,
-  },
-  {
-    _id: "inq3",
-    name: "Ipsita Rout",
-    email: "ipsita.rout@example.com",
-    phone: "9988776655",
-    reason: "Rasabali packaging leaked during delivery, requesting replacement.",
-    status: "Pending",
-    createdAt: "2026-07-28T09:15:00.000Z",
-    isDeleted: false,
-  },
-];
+import { getDashboardStats } from "../../redux/features/dashboard/dashboardThunk";
+import { getAllContacts } from "../../redux/features/contact/contactThunk";
+import { getOrders, updateOrderStatus } from "../../redux/features/order/orderThunk";
+import { useToast } from "../../context/ToastContext";
 
 const currency = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
 const AdminDashboard = () => {
-  const adminName = DUMMY_ADMIN.name;
-  const adminRole = DUMMY_ADMIN.role === "super_admin" ? "Super Admin" : "Admin";
+  const dispatch = useDispatch();
+  const { showToast } = useToast();
 
-  const [stats] = useState(DUMMY_STATS);
-  const [inquiries] = useState(DUMMY_INQUIRIES);
-  const [orders, setOrders] = useState(DUMMY_ORDERS);
+  const { stats, isLoading: statsLoading } = useSelector((state) => state.dashboard);
+  const { contacts: inquiries = [], isLoading: inquiriesLoading } = useSelector((state) => state.contact);
+  const { orders = [], isLoading: ordersLoading } = useSelector((state) => state.order);
+  const admin = useSelector((state) => state.auth.user);
 
-  const handleUpdateStatus = (orderId, newStatus) => {
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+  const adminName = admin?.name || "Admin User";
+  const adminRole = admin?.role === "super_admin" ? "Super Admin" : "Admin";
+
+  useEffect(() => {
+    dispatch(getDashboardStats());
+    dispatch(getAllContacts());
+    dispatch(getOrders({ limit: 100 }));
+  }, [dispatch]);
+
+  const handleUpdateStatus = async (orderId, newStatus) => {
+    try {
+      const resultAction = await dispatch(updateOrderStatus({ orderId, orderStatus: newStatus })).unwrap();
+      if (resultAction.success) {
+        showToast(`Order marked as ${newStatus}!`, "success");
+        dispatch(getOrders({ limit: 100 }));
+        dispatch(getDashboardStats());
+      }
+    } catch (err) {
+      showToast(err.message || "Failed to update order status", "error");
+    }
   };
 
-  const pendingOrders = orders.filter((o) => o.status === "Pending" || o.status === "Processing").length;
+  const activeStats = stats || {
+    totalSales: 0,
+    todaySales: 0,
+    totalCategory: 0,
+    totalProduct: 0,
+    todayOrders: 0,
+    todayInquiries: 0,
+    weeklySales: [],
+    monthlySales: [],
+  };
+
+  const pendingOrders = orders.filter((o) => o.orderStatus === "Pending" || o.orderStatus === "Preparing" || o.orderStatus === "Confirmed").length;
 
   // ---- Chart data (weekly / monthly toggle) ----
   const [chartView, setChartView] = useState("weekly");
-  const chartData = chartView === "weekly" ? stats.weeklySales : stats.monthlySales;
+  const chartData = chartView === "weekly" ? activeStats.weeklySales : activeStats.monthlySales;
   const labelKey = chartView === "weekly" ? "day" : "month";
   const maxVal = Math.max(1, ...(chartData || []).map((d) => d.sales || 0));
 
@@ -131,7 +86,7 @@ const AdminDashboard = () => {
   const statCards = [
     {
       label: "Total Sales",
-      value: currency(stats.totalSales),
+      value: currency(activeStats.totalSales),
       icon: IndianRupee,
       color: "text-indigo-600",
       bg: "bg-indigo-50",
@@ -139,7 +94,7 @@ const AdminDashboard = () => {
     },
     {
       label: "Today's Sales",
-      value: currency(stats.todaySales),
+      value: currency(activeStats.todaySales),
       icon: TrendingUp,
       color: "text-emerald-600",
       bg: "bg-emerald-50",
@@ -147,7 +102,7 @@ const AdminDashboard = () => {
     },
     {
       label: "Categories",
-      value: stats.totalCategory,
+      value: activeStats.totalCategory,
       icon: Layers,
       color: "text-violet-600",
       bg: "bg-violet-50",
@@ -155,7 +110,7 @@ const AdminDashboard = () => {
     },
     {
       label: "Products",
-      value: stats.totalProduct,
+      value: activeStats.totalProduct,
       icon: ChefHat,
       color: "text-orange-600",
       bg: "bg-orange-50",
@@ -163,7 +118,7 @@ const AdminDashboard = () => {
     },
     {
       label: "Today's Orders",
-      value: stats.todayOrders,
+      value: activeStats.todayOrders,
       icon: ShoppingBag,
       color: "text-sky-600",
       bg: "bg-sky-50",
@@ -171,13 +126,22 @@ const AdminDashboard = () => {
     },
     {
       label: "Today's Inquiries",
-      value: stats.todayInquiries,
+      value: activeStats.todayInquiries,
       icon: MessageSquare,
       color: "text-rose-600",
       bg: "bg-rose-50",
       to: "/admin/inquiries",
     },
   ];
+
+  if (statsLoading && !stats) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh] bg-slate-50 space-y-3">
+        <Loader2 className="h-10 w-10 text-[#DFA250] animate-spin" />
+        <span className="text-xs text-[#6E5A4F] font-semibold">Loading Dashboard Data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 bg-slate-50 -m-4 sm:-m-6 p-4 sm:p-6 min-h-screen">
@@ -285,7 +249,7 @@ const AdminDashboard = () => {
                 <CalendarDays size={14} className="text-indigo-500" />
                 <span className="text-xs font-medium">Today's Orders</span>
               </div>
-              <span className="text-xs font-bold text-slate-900">{stats.todayOrders}</span>
+              <span className="text-xs font-bold text-slate-900">{activeStats.todayOrders}</span>
             </div>
 
             <div className="flex items-center justify-between border-b border-slate-50 pb-2.5">
@@ -301,7 +265,7 @@ const AdminDashboard = () => {
                 <AlertCircle size={14} className="text-rose-500" />
                 <span className="text-xs font-medium">New Inquiries Today</span>
               </div>
-              <span className="text-xs font-bold text-rose-600">{stats.todayInquiries}</span>
+              <span className="text-xs font-bold text-rose-600">{activeStats.todayInquiries}</span>
             </div>
           </div>
 
@@ -342,36 +306,39 @@ const AdminDashboard = () => {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {orders.slice(0, 4).map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3 px-1 font-medium font-mono text-slate-700">{order.id}</td>
+                  <tr key={order._id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-3 px-1 font-medium font-mono text-slate-700 truncate max-w-[100px]" title={order._id}>
+                      {order.orderNumber || order._id.substring(18)}
+                    </td>
                     <td className="py-3 px-1 text-slate-700">{order.customerName}</td>
                     <td className="py-3 px-1 font-semibold text-slate-900">
-                      {currency(order.amount)}
+                      {currency(order.totalAmount)}
                     </td>
                     <td className="py-3 px-1">
                       <div className="flex justify-center">
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold
-                          ${order.status === "Completed" ? "bg-emerald-50 text-emerald-700" : ""}
-                          ${order.status === "Processing" ? "bg-amber-50 text-amber-700" : ""}
-                          ${order.status === "Pending" ? "bg-rose-50 text-rose-700" : ""}
+                          ${order.orderStatus === "Delivered" ? "bg-emerald-50 text-emerald-700" : ""}
+                          ${order.orderStatus === "Preparing" || order.orderStatus === "Confirmed" || order.orderStatus === "Out For Delivery" ? "bg-amber-50 text-amber-700" : ""}
+                          ${order.orderStatus === "Pending" ? "bg-rose-50 text-rose-700" : ""}
+                          ${order.orderStatus === "Cancelled" ? "bg-slate-100 text-slate-500" : ""}
                         `}
                         >
-                          {order.status === "Completed" && <CheckCircle2 size={10} />}
-                          {(order.status === "Processing" || order.status === "Pending") && (
+                          {order.orderStatus === "Delivered" && <CheckCircle2 size={10} />}
+                          {(order.orderStatus === "Preparing" || order.orderStatus === "Confirmed" || order.orderStatus === "Out For Delivery" || order.orderStatus === "Pending") && (
                             <Clock size={10} />
                           )}
-                          {order.status}
+                          {order.orderStatus}
                         </span>
                       </div>
                     </td>
                     <td className="py-3 px-1 text-right">
-                      {order.status !== "Completed" ? (
+                      {order.orderStatus !== "Delivered" && order.orderStatus !== "Cancelled" ? (
                         <button
-                          onClick={() => handleUpdateStatus(order.id, "Completed")}
+                          onClick={() => handleUpdateStatus(order._id, "Delivered")}
                           className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md text-[10px] shadow-sm transition-colors"
                         >
-                          Complete
+                          Deliver
                         </button>
                       ) : (
                         <span className="text-[10px] text-emerald-600 font-semibold">Processed</span>

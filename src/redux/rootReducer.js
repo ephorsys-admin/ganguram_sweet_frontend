@@ -8,6 +8,7 @@ import { adminApi } from "./services/adminApi";
 
 import contactReducer from "./features/contact/contactSlice";
 import advertisementReducer from "./features/advertisement/advertisementSlice";
+import dashboardReducer from "./features/dashboard/dashboardSlice";
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -17,6 +18,7 @@ const rootReducer = combineReducers({
   bill: billReducer,
   contact: contactReducer,
   advertisement: advertisementReducer,
+  dashboard: dashboardReducer,
   [adminApi.reducerPath]: adminApi.reducer,
 });
 
