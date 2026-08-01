@@ -3,21 +3,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /**
- * Decorative sweet illustrations (SVG) used as slide art.
- * Swap the <SweetArt /> usage below with a real <img src="..." />
- * once you have product photography.
+ * Per-variant piece data: shared <defs> plus an array of individual
+ * shapes. Splitting each sweet into pieces lets us drop them onto
+ * the plate one by one instead of animating one static blob.
  */
-const SweetArt = ({ variant }) => {
-  const artMap = {
-    ladoo: (
-      <svg viewBox="0 0 300 300" className="h-full w-full">
-        <defs>
-          <radialGradient id="ladooG" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stopColor="#F9D889" />
-            <stop offset="55%" stopColor="#E0A233" />
-            <stop offset="100%" stopColor="#9C5E1B" />
-          </radialGradient>
-        </defs>
+const SWEET_DATA = {
+  ladoo: {
+    defs: (
+      <radialGradient id="ladooG" cx="35%" cy="30%" r="75%">
+        <stop offset="0%" stopColor="#F9D889" />
+        <stop offset="55%" stopColor="#E0A233" />
+        <stop offset="100%" stopColor="#9C5E1B" />
+      </radialGradient>
+    ),
+    pieces: [
+      <>
         <circle cx="150" cy="155" r="105" fill="url(#ladooG)" />
         {Array.from({ length: 14 }).map((_, i) => {
           const a = (i / 14) * Math.PI * 2;
@@ -33,66 +33,188 @@ const SweetArt = ({ variant }) => {
             />
           );
         })}
-      </svg>
+      </>,
+    ],
+  },
+  gulabJamun: {
+    defs: (
+      <radialGradient id="jamunG" cx="35%" cy="30%" r="80%">
+        <stop offset="0%" stopColor="#8C4A2A" />
+        <stop offset="60%" stopColor="#5A2A16" />
+        <stop offset="100%" stopColor="#301509" />
+      </radialGradient>
     ),
-    gulabJamun: (
-      <svg viewBox="0 0 300 300" className="h-full w-full">
-        <defs>
-          <radialGradient id="jamunG" cx="35%" cy="30%" r="80%">
-            <stop offset="0%" stopColor="#8C4A2A" />
-            <stop offset="60%" stopColor="#5A2A16" />
-            <stop offset="100%" stopColor="#301509" />
-          </radialGradient>
-        </defs>
-        <ellipse cx="115" cy="140" rx="65" ry="58" fill="url(#jamunG)" />
-        <ellipse cx="195" cy="185" rx="58" ry="52" fill="url(#jamunG)" />
-        <path
-          d="M40 230 Q150 260 260 225"
-          stroke="#C9962C"
-          strokeWidth="4"
-          fill="none"
-          opacity="0.6"
+    pieces: [
+      <ellipse cx="115" cy="140" rx="65" ry="58" fill="url(#jamunG)" />,
+      <ellipse cx="195" cy="185" rx="58" ry="52" fill="url(#jamunG)" />,
+      <path
+        d="M40 230 Q150 260 260 225"
+        stroke="#C9962C"
+        strokeWidth="4"
+        fill="none"
+        opacity="0.6"
+      />,
+    ],
+  },
+  kajuKatli: {
+    defs: (
+      <linearGradient id="katliG" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#F3E3C3" />
+        <stop offset="100%" stopColor="#D9BE8A" />
+      </linearGradient>
+    ),
+    pieces: [0, 1, 2].map((i) => (
+      <g transform={`translate(${70 + i * 55} 90) rotate(8)`}>
+        <polygon
+          points="0,80 60,0 100,60 40,140"
+          fill="url(#katliG)"
+          stroke="#B8912F"
+          strokeWidth="2"
         />
-      </svg>
+        <polygon points="0,80 60,0 65,10 8,86" fill="#EBCB7A" opacity="0.6" />
+      </g>
+    )),
+  },
+  rasgulla: {
+    defs: (
+      <radialGradient id="rasG" cx="35%" cy="30%" r="75%">
+        <stop offset="0%" stopColor="#FFFFFF" />
+        <stop offset="70%" stopColor="#FBF3E4" />
+        <stop offset="100%" stopColor="#E9D9B8" />
+      </radialGradient>
     ),
-    kajuKatli: (
-      <svg viewBox="0 0 300 300" className="h-full w-full">
-        <defs>
-          <linearGradient id="katliG" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#F3E3C3" />
-            <stop offset="100%" stopColor="#D9BE8A" />
-          </linearGradient>
-        </defs>
-        {[0, 1, 2].map((i) => (
-          <g key={i} transform={`translate(${70 + i * 55} 90) rotate(8)`}>
-            <polygon
-              points="0,80 60,0 100,60 40,140"
-              fill="url(#katliG)"
-              stroke="#B8912F"
-              strokeWidth="2"
-            />
-            <polygon points="0,80 60,0 65,10 8,86" fill="#EBCB7A" opacity="0.6" />
-          </g>
-        ))}
-      </svg>
-    ),
-    rasgulla: (
-      <svg viewBox="0 0 300 300" className="h-full w-full">
-        <defs>
-          <radialGradient id="rasG" cx="35%" cy="30%" r="75%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="70%" stopColor="#FBF3E4" />
-            <stop offset="100%" stopColor="#E9D9B8" />
-          </radialGradient>
-        </defs>
-        <circle cx="110" cy="150" r="70" fill="url(#rasG)" />
-        <circle cx="205" cy="120" r="55" fill="url(#rasG)" />
-        <circle cx="185" cy="205" r="48" fill="url(#rasG)" />
-      </svg>
-    ),
-  };
-  return artMap[variant] ?? null;
+    pieces: [
+      <circle cx="110" cy="150" r="70" fill="url(#rasG)" />,
+      <circle cx="205" cy="120" r="55" fill="url(#rasG)" />,
+      <circle cx="185" cy="205" r="48" fill="url(#rasG)" />,
+    ],
+  },
 };
+
+/**
+ * AnimatedSweet — renders a sweet's pieces so each one drops onto
+ * the plate from above, one after another, with a soft bounce.
+ * Remounts (and therefore replays) every time the slide changes.
+ */
+const AnimatedSweet = ({ variant }) => {
+  const data = SWEET_DATA[variant];
+  if (!data) return null;
+  return (
+    <svg viewBox="0 0 300 300" className="h-full w-full overflow-visible">
+      <defs>{data.defs}</defs>
+      {data.pieces.map((piece, i) => (
+        <motion.g
+          key={i}
+          initial={{ opacity: 0, y: -240, rotate: i % 2 === 0 ? -12 : 12 }}
+          animate={{ opacity: 1, y: 0, rotate: 0 }}
+          transition={{
+            type: "spring",
+            stiffness: 260,
+            damping: 13,
+            mass: 0.8,
+            delay: 0.2 + i * 0.28,
+          }}
+        >
+          {piece}
+        </motion.g>
+      ))}
+    </svg>
+  );
+};
+
+/**
+ * Sparkle — a single twinkling dot used around the plate for a
+ * premium, "modern" ambient feel. Position is passed in % so it
+ * can be scattered loosely around the sweet.
+ */
+const Sparkle = ({ top, left, size = 6, delay = 0, duration = 2.2 }) => (
+  <motion.span
+    className="pointer-events-none absolute rounded-full"
+    style={{
+      top,
+      left,
+      width: size,
+      height: size,
+      background: "radial-gradient(circle, #FFF7E0 0%, #F3C463 70%, transparent 100%)",
+      boxShadow: "0 0 6px 1px rgba(255, 224, 150, 0.8)",
+    }}
+    animate={{ opacity: [0, 1, 0], scale: [0.4, 1, 0.4] }}
+    transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
+  />
+);
+
+/**
+ * PlateStage — sits the sweet illustration on an animated ceramic
+ * plate: gentle infinite float + wobble, a shadow that breathes in
+ * counter-time, a diagonal shimmer sweep, and a scatter of sparkles.
+ */
+const PlateStage = ({ art, plateTint = "#FFF9EF" }) => (
+  <motion.div
+    initial={{ opacity: 0, scale: 0.8, rotate: -6 }}
+    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+    transition={{ duration: 0.6, delay: 0.1 }}
+    className="relative flex h-64 w-64 shrink-0 items-center justify-center sm:h-80 sm:w-80 md:h-96 md:w-96"
+  >
+    {/* Plate */}
+    <svg
+      viewBox="0 0 320 320"
+      className="absolute inset-0 h-full w-full drop-shadow-xl"
+    >
+      <defs>
+        <radialGradient id="plateBase" cx="40%" cy="35%" r="70%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="55%" stopColor={plateTint} />
+          <stop offset="100%" stopColor="#D8C79E" />
+        </radialGradient>
+        <radialGradient id="plateRim" cx="40%" cy="35%" r="75%">
+          <stop offset="80%" stopColor="rgba(255,255,255,0)" />
+          <stop offset="92%" stopColor="rgba(255,255,255,0.75)" />
+          <stop offset="100%" stopColor="rgba(191,161,102,0.6)" />
+        </radialGradient>
+      </defs>
+      <ellipse cx="160" cy="168" rx="150" ry="130" fill="url(#plateBase)" />
+      <ellipse cx="160" cy="168" rx="150" ry="130" fill="url(#plateRim)" />
+      <ellipse
+        cx="160"
+        cy="168"
+        rx="108"
+        ry="92"
+        fill="none"
+        stroke="rgba(180,140,70,0.35)"
+        strokeWidth="2"
+      />
+    </svg>
+
+    {/* Breathing contact shadow under the sweet */}
+    <motion.div
+      className="absolute rounded-full"
+      style={{
+        bottom: "16%",
+        width: "56%",
+        height: "10%",
+        background: "radial-gradient(ellipse, rgba(60,30,10,0.35) 0%, rgba(60,30,10,0) 72%)",
+        filter: "blur(2px)",
+      }}
+      animate={{ scaleX: [1, 0.82, 1], opacity: [0.55, 0.35, 0.55] }}
+      transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
+    />
+
+    {/* Sparkles scattered around the sweet */}
+    <Sparkle top="12%" left="18%" size={5} delay={0} />
+    <Sparkle top="20%" left="78%" size={4} delay={0.6} duration={1.8} />
+    <Sparkle top="68%" left="82%" size={6} delay={1.1} duration={2.4} />
+    <Sparkle top="72%" left="14%" size={4} delay={1.6} duration={2} />
+
+    {/* Falling sweet pieces, then a gentle continuous float */}
+    <motion.div
+      className="relative h-40 w-40 overflow-visible drop-shadow-2xl sm:h-52 sm:w-52 md:h-60 md:w-60"
+      animate={{ y: [0, -14, 0], rotate: [-2, 2, -2] }}
+      transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
+    >
+      <AnimatedSweet variant={art} />
+    </motion.div>
+  </motion.div>
+);
 
 const SLIDES = [
   {
@@ -102,6 +224,8 @@ const SLIDES = [
     title: "Besan Ladoo",
     subtitle: "Roasted gram flour, pure ghee, slow-cooked the traditional way.",
     bg: "linear-gradient(135deg, #FFF3D6 0%, #F6D989 55%, #D9962E 100%)",
+    plateTint: "#FFF3D6",
+    bgImage: "https://images.unsplash.com/photo-1596797038530-2c107229654b?auto=format&fit=crop&w=1200&q=80",
   },
   {
     id: "gulabJamun",
@@ -110,6 +234,9 @@ const SLIDES = [
     title: "Gulab Jamun",
     subtitle: "Soft milk dumplings soaked in warm cardamom-rose syrup.",
     bg: "linear-gradient(135deg, #F3D9C4 0%, #C98B5E 55%, #7A3E22 100%)",
+    plateTint: "#F3D9C4",
+    bgImage: "/homepic/second.jpg",
+
   },
   {
     id: "kajuKatli",
@@ -118,6 +245,8 @@ const SLIDES = [
     title: "Kaju Katli",
     subtitle: "Silver-leaf cashew diamonds, hand-cut, melt-in-mouth smooth.",
     bg: "linear-gradient(135deg, #FBF3DD 0%, #E9CE8F 55%, #B8912F 100%)",
+    plateTint: "#FBF3DD",
+    bgImage: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=1200&q=80",
   },
   {
     id: "rasgulla",
@@ -125,7 +254,9 @@ const SLIDES = [
     eyebrow: "Bengal Classic",
     title: "Rasgulla",
     subtitle: "Spongy cottage-cheese balls in light, fragrant sugar syrup.",
-    bg: "linear-gradient(135deg, #FFF9EF 0%, #F0E2C4 55%, #D9BE8A 100%)",
+    bg: "linear-gradient(135deg, #DFCAAC 0%, #B8966E 55%, #7D5B3A 100%)",
+    plateTint: "#FFF9EF",
+    bgImage: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=1200&q=80",
   },
 ];
 
@@ -192,7 +323,15 @@ const HomeCarousel = () => {
           className="absolute inset-0 flex items-center"
           style={{ background: slide.bg }}
         >
-          <div className="mx-auto flex w-full max-w-7xl flex-col-reverse items-center gap-8 px-6 sm:px-10 md:flex-row md:justify-between lg:px-16">
+          {/* Background image overlay with mix-blend-overlay and low opacity for depth */}
+          {slide.bgImage && (
+            <div
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30 mix-blend-overlay pointer-events-none"
+              style={{ backgroundImage: `url(${slide.bgImage})` }}
+            />
+          )}
+
+          <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col-reverse items-center gap-8 px-6 sm:px-10 md:flex-row md:justify-between lg:px-16">
             {/* Text */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -217,24 +356,22 @@ const HomeCarousel = () => {
               </p>
               <motion.a
                 href="#"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.96 }}
-                className="mt-6 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg"
-                style={{ backgroundColor: "#8A2E2E" }}
+                whileHover={{ scale: 1.04, backgroundColor: "#A33636" }}
+                whileTap={{ scale: 0.98 }}
+                className="group mt-8 inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(138,46,46,0.3)] hover:shadow-[0_6px_24px_rgba(138,46,46,0.5)] tracking-wide transition-all"
+                style={{
+                  backgroundColor: "#8A2E2E",
+                  fontFamily: "'Outfit', sans-serif",
+                  border: "1px solid rgba(255,255,255,0.1)"
+                }}
               >
-                Order Now
+                <span>Order Now</span>
+                <ChevronRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
               </motion.a>
             </motion.div>
 
             {/* Art */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, rotate: -6 }}
-              animate={{ opacity: 1, scale: 1, rotate: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="h-56 w-56 shrink-0 drop-shadow-2xl sm:h-72 sm:w-72 md:h-80 md:w-80"
-            >
-              <SweetArt variant={slide.art} />
-            </motion.div>
+            <PlateStage art={slide.art} plateTint={slide.plateTint} />
           </div>
         </motion.div>
       </AnimatePresence>
