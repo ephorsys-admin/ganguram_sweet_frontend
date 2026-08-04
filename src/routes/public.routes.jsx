@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import { Route } from "react-router-dom";
+import { Route, Navigate } from "react-router-dom";
 import MainLayout from "../layout/MainLayout";
 import ProductDetails from "../web/web-components/Productdetails";
 import CategoryListing from "../web/web-components/Categorylisting";
@@ -17,6 +17,7 @@ const PublicRoutes = (
   <Route path="/" element={<MainLayout />}>
     <Route index element={<HomePage />} />
     <Route path="/products" element={<OurSweets />} />
+    <Route path="/OurSweets" element={<Navigate to="/products" replace />} />
     <Route path="/products/:productId" element={<ProductDetails />} />
     <Route path="/product/:productId/order" element={<OrderPage />} />
     <Route path="/category/:categoryId" element={<CategoryListing />} />

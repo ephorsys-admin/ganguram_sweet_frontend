@@ -27,6 +27,7 @@ import { PersistGate } from "redux-persist/integration/react";
 // =============================================
 
 import { ToastProvider } from "./context/ToastContext";
+import { SocketProvider } from "./context/socket";
 
 ReactDOM.createRoot(
   document.getElementById("root")
@@ -37,7 +38,9 @@ ReactDOM.createRoot(
       persistor={persistor}
     >
       <ToastProvider>
-        <App />
+        <SocketProvider>
+          <App />
+        </SocketProvider>
       </ToastProvider>
     </PersistGate>
   </Provider>
