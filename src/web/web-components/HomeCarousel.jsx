@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
+const MotionLink = motion(Link);
 
 /**
  * Per-variant piece data: shared <defs> plus an array of individual
@@ -354,8 +356,8 @@ const HomeCarousel = () => {
               <p className="mt-4 text-base sm:text-lg" style={{ color: "#5C3A24" }}>
                 {slide.subtitle}
               </p>
-              <motion.a
-                href="#"
+              <MotionLink
+                to="/products"
                 whileHover={{ scale: 1.04, backgroundColor: "#A33636" }}
                 whileTap={{ scale: 0.98 }}
                 className="group mt-8 inline-flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(138,46,46,0.3)] hover:shadow-[0_6px_24px_rgba(138,46,46,0.5)] tracking-wide transition-all"
@@ -366,8 +368,9 @@ const HomeCarousel = () => {
                 }}
               >
                 <span>Order Now</span>
+                
                 <ChevronRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
-              </motion.a>
+              </MotionLink>
             </motion.div>
 
             {/* Art */}

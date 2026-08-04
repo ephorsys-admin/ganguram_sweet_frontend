@@ -73,7 +73,7 @@ const Contact = () => {
         name: formData.name,
         phone: formData.phone,
         email: formData.email,
-        reason: `[${formData.type}] ${formData.message}`,
+        reason: formData.message,
       };
 
       const resultAction = await dispatch(createContact(payload)).unwrap();
