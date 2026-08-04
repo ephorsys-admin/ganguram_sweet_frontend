@@ -133,38 +133,38 @@ const AdvertisementPopup = () => {
 
             {/* Inner Postage Stamp White Card */}
             <div className="relative bg-white w-full rounded-lg shadow-inner overflow-hidden select-none">
-              
+
               {/* Radial-Gradient Scalloped Edges (Postage Stamp Cuts) */}
-              <div 
+              <div
                 className="absolute top-0 left-0 right-0 h-3 z-20 pointer-events-none"
-                style={{ 
-                  backgroundImage: "radial-gradient(circle at 50% -2px, #A22648 5px, transparent 6px)", 
-                  backgroundSize: "14px 10px", 
-                  backgroundRepeat: "repeat-x" 
+                style={{
+                  backgroundImage: "radial-gradient(circle at 50% -2px, #A22648 5px, transparent 6px)",
+                  backgroundSize: "14px 10px",
+                  backgroundRepeat: "repeat-x"
                 }}
               />
-              <div 
+              <div
                 className="absolute bottom-0 left-0 right-0 h-3 z-20 pointer-events-none"
-                style={{ 
-                  backgroundImage: "radial-gradient(circle at 50% 12px, #A22648 5px, transparent 6px)", 
-                  backgroundSize: "14px 10px", 
-                  backgroundRepeat: "repeat-x" 
+                style={{
+                  backgroundImage: "radial-gradient(circle at 50% 12px, #A22648 5px, transparent 6px)",
+                  backgroundSize: "14px 10px",
+                  backgroundRepeat: "repeat-x"
                 }}
               />
-              <div 
+              <div
                 className="absolute top-0 bottom-0 left-0 w-3 z-20 pointer-events-none"
-                style={{ 
-                  backgroundImage: "radial-gradient(circle at -2px 50%, #A22648 5px, transparent 6px)", 
-                  backgroundSize: "10px 14px", 
-                  backgroundRepeat: "repeat-y" 
+                style={{
+                  backgroundImage: "radial-gradient(circle at -2px 50%, #A22648 5px, transparent 6px)",
+                  backgroundSize: "10px 14px",
+                  backgroundRepeat: "repeat-y"
                 }}
               />
-              <div 
+              <div
                 className="absolute top-0 bottom-0 right-0 w-3 z-20 pointer-events-none"
-                style={{ 
-                  backgroundImage: "radial-gradient(circle at 12px 50%, #A22648 5px, transparent 6px)", 
-                  backgroundSize: "10px 14px", 
-                  backgroundRepeat: "repeat-y" 
+                style={{
+                  backgroundImage: "radial-gradient(circle at 12px 50%, #A22648 5px, transparent 6px)",
+                  backgroundSize: "10px 14px",
+                  backgroundRepeat: "repeat-y"
                 }}
               />
 
@@ -244,7 +244,17 @@ const AdvertisementPopup = () => {
                       transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
                       src={advertisements[activeIndex].image}
                       alt={advertisements[activeIndex].title}
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover cursor-grab active:cursor-grabbing select-none"
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.5}
+                      onDragEnd={(_, info) => {
+                        if (info.offset.x < -50) {
+                          paginate(1);
+                        } else if (info.offset.x > 50) {
+                          paginate(-1);
+                        }
+                      }}
                     />
                   </AnimatePresence>
                 </div>

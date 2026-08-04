@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
   getBills,
+  getBillsForStats,
   getSingleBill,
   createWalkinBill,
   createOrderBill,
@@ -15,6 +16,8 @@ const initialState = {
   error: null,
   customerSummary: null,
   customerSummaryLoading: false,
+  statsBills: [],
+  statsLoading: false,
 };
 
 const billSlice = createSlice({
@@ -47,6 +50,21 @@ const billSlice = createSlice({
       .addCase(getBills.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload?.message || "Failed to load bills";
+      })
+
+      // getBillsForStats
+      .addCase(getBillsForStats.pending, (state) => {
+        state.statsLoading = true;
+        state.error = null;
+      })
+      .addCase(getBillsForStats.fulfilled, (state, action) => {
+        state.statsLoading = false;
+        state.statsBills = action.payload.data || [];
+        state.error = null;
+      })
+      .addCase(getBillsForStats.rejected, (state, action) => {
+        state.statsLoading = false;
+        state.error = action.payload?.message || "Failed to load stats bills";
       })
 
       // getSingleBill

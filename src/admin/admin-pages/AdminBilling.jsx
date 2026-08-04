@@ -7,7 +7,7 @@ import BillingFilters from "../admin-components/Billing/BillingFilters";
 import BillingStats from "../admin-components/Billing/BillingStats";
 import BillingTable from "../admin-components/Billing/BillingTable";
 import BillDetailModal from "../admin-components/Billing/BillDetailModal";
-import { getBills } from "../../redux/features/bill/billThunk";
+import { getBills, getBillsForStats } from "../../redux/features/bill/billThunk";
 import { useToast } from "../../context/ToastContext";
 
 const AdminBilling = () => {
@@ -19,7 +19,7 @@ const AdminBilling = () => {
   const isSuperAdmin = currentUser?.role === "super_admin";
 
   // Redux state
-  const { bills = [], pagination, isLoading, error } = useSelector((state) => state.bill);
+  const { bills = [], pagination, isLoading, error, statsBills = [] } = useSelector((state) => state.bill);
 
   // Filters State
   const [page, setPage] = useState(1);
@@ -42,6 +42,15 @@ const AdminBilling = () => {
     }));
   }, [dispatch, page, search, statusFilter, typeFilter]);
 
+  // Fetch all bills for stats calculation (without page and status, and with high limit)
+  useEffect(() => {
+    dispatch(getBillsForStats({
+      limit: 100000,
+      search,
+      billType: typeFilter === "All" ? undefined : typeFilter
+    }));
+  }, [dispatch, search, typeFilter]);
+
   const handleOpenDetails = (bill) => {
     setSelectedBill(bill);
     setDetailOpen(true);
@@ -55,7 +64,11 @@ const AdminBilling = () => {
       <BillingHeader onCreateClick={() => navigate("/admin/billing/create")} />
 
       {/* Stats Panel */}
-      <BillingStats bills={bills} totalInvoicesCount={pagination?.total || bills.length} />
+      <BillingStats
+        bills={statsBills}
+        totalInvoicesCount={statsBills.length}
+        isSuperAdmin={isSuperAdmin}
+      />
 
       {/* Filters */}
       <BillingFilters

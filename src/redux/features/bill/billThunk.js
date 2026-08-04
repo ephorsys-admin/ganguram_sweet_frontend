@@ -93,6 +93,29 @@ export const getBills = createAsyncThunk(
 );
 
 // ==========================================
+// Thunk: Get Bills For Stats Calculation (Without pagination limit)
+// ==========================================
+export const getBillsForStats = createAsyncThunk(
+  "bill/getBillsForStats",
+  async (params, thunkAPI) => {
+    let queryString = "";
+    if (params) {
+      const urlParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          urlParams.append(key, value);
+        }
+      });
+      const query = urlParams.toString();
+      if (query) {
+        queryString = `?${query}`;
+      }
+    }
+    return await fetchWithAuth(`/bill/all${queryString}`, { method: "GET" }, thunkAPI);
+  }
+);
+
+// ==========================================
 // Thunk: Get Single Bill Details (Admin)
 // ==========================================
 export const getSingleBill = createAsyncThunk(
