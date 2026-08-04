@@ -91,6 +91,7 @@ const AdminDashboard = () => {
       color: "text-indigo-600",
       bg: "bg-indigo-50",
       to: "/admin/orders",
+      superAdminOnly: true,
     },
     {
       label: "Today's Sales",
@@ -132,7 +133,7 @@ const AdminDashboard = () => {
       bg: "bg-rose-50",
       to: "/admin/inquiries",
     },
-  ];
+  ].filter((card) => !card.superAdminOnly || admin?.role === "super_admin");
 
   if (statsLoading && !stats) {
     return (
@@ -164,7 +165,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className={`grid grid-cols-2 sm:grid-cols-3 ${admin?.role === "super_admin" ? "xl:grid-cols-6" : "xl:grid-cols-5"} gap-4`}>
         {statCards.map(({ label, value, icon: Icon, color, bg, to }) => (
           <Link to={to} key={label} className="block">
             <motion.div
