@@ -18,10 +18,10 @@ const CustomerDetailsSection = ({
   errors = {},
 }) => {
   return (
-    <div className="bg-white p-5 sm:p-6 md:p-8 rounded-3xl border border-[#E6CCB2]/40 shadow-sm space-y-6">
+    <div className="bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl border border-[#E6CCB2]/40 shadow-sm space-y-5 sm:space-y-6">
       <div className="flex items-center justify-between border-b border-[#FAF6F0] pb-3.5">
         <h3 className="font-bold text-[#3D271B] uppercase tracking-wider text-sm sm:text-base flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-[#FAF6F0] text-[#a65827] flex items-center justify-center text-xs font-black">
+          <span className="w-6 h-6 rounded-full bg-[#FAF6F0] text-[#a65827] flex items-center justify-center text-xs font-black shrink-0">
             1
           </span>
           Customer Details
@@ -31,10 +31,10 @@ const CustomerDetailsSection = ({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
         {/* CUSTOMER NAME */}
-        <div className="space-y-2">
-          <label className="block text-sm sm:text-base font-bold text-[#3D271B]">
+        <div className="space-y-1.5 sm:space-y-2">
+          <label className="block text-xs sm:text-sm md:text-base font-bold text-[#3D271B]">
             Customer Name <span className="text-red-500">*</span>
           </label>
 
@@ -43,7 +43,7 @@ const CustomerDetailsSection = ({
             placeholder="e.g. Rajesh Kumar"
             value={customerName}
             onChange={(e) => setCustomerName(e.target.value)}
-            className="block w-full px-4 py-3.5 bg-[#FAF6F0]/40 border border-[#E6CCB2]/40 rounded-2xl text-sm sm:text-base text-[#3D271B] font-semibold focus:outline-none focus:ring-2 focus:ring-[#a65827]/20 focus:border-[#a65827] transition"
+            className="block w-full px-3.5 sm:px-4 py-3 sm:py-3.5 bg-[#FAF6F0]/40 border border-[#E6CCB2]/40 rounded-2xl text-xs sm:text-sm md:text-base text-[#3D271B] font-semibold focus:outline-none focus:ring-2 focus:ring-[#a65827]/20 focus:border-[#a65827] transition"
           />
 
           {errors.customerName && (
@@ -54,8 +54,8 @@ const CustomerDetailsSection = ({
         </div>
 
         {/* MOBILE NUMBER */}
-        <div className="space-y-2">
-          <label className="block text-sm sm:text-base font-bold text-[#3D271B]">
+        <div className="space-y-1.5 sm:space-y-2">
+          <label className="block text-xs sm:text-sm md:text-base font-bold text-[#3D271B]">
             Mobile Number <span className="text-red-500">*</span>
           </label>
 
@@ -68,7 +68,7 @@ const CustomerDetailsSection = ({
             onChange={(e) =>
               setMobile(e.target.value.replace(/\D/g, "").slice(0, 10))
             }
-            className="block w-full px-4 py-3.5 bg-[#FAF6F0]/40 border border-[#E6CCB2]/40 rounded-2xl text-sm sm:text-base text-[#3D271B] font-semibold tracking-wide focus:outline-none focus:ring-2 focus:ring-[#a65827]/20 focus:border-[#a65827] transition"
+            className="block w-full px-3.5 sm:px-4 py-3 sm:py-3.5 bg-[#FAF6F0]/40 border border-[#E6CCB2]/40 rounded-2xl text-xs sm:text-sm md:text-base text-[#3D271B] font-semibold tracking-wide focus:outline-none focus:ring-2 focus:ring-[#a65827]/20 focus:border-[#a65827] transition"
           />
 
           {errors.mobile && (
@@ -80,7 +80,7 @@ const CustomerDetailsSection = ({
       </div>
 
       {/* EMAIL / WHATSAPP / DOB */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
         {/* EMAIL */}
         <div className="space-y-2">
           <label className="block text-sm sm:text-base font-bold text-[#3D271B]">

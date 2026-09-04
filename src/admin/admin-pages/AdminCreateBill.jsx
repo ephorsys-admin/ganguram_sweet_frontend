@@ -67,8 +67,9 @@ const AdminCreateBill = () => {
   // ======================================================
   const [items, setItems] = useState([]);
   const [selectedProductId, setSelectedProductId] = useState("");
-  const [itemPrice, setItemPrice] = useState(0);
-  const [itemQuantity, setItemQuantity] = useState(1);
+  const [customProductName, setCustomProductName] = useState("");
+  const [itemPrice, setItemPrice] = useState("");
+  const [itemQuantity, setItemQuantity] = useState("1");
 
   // ======================================================
   // DISCOUNT STATE
@@ -116,6 +117,7 @@ const AdminCreateBill = () => {
                 quantity: Number(order.quantity || 1),
                 price: Number(order.productPrice || 0),
                 total: Number(order.totalAmount || 0),
+                isCustom: false,
               },
             ]);
           }
@@ -169,66 +171,123 @@ const AdminCreateBill = () => {
     const prodId = e.target.value;
     setSelectedProductId(prodId);
 
-    const prod = products.find((p) => p._id === prodId);
-    if (prod) {
-      setItemPrice(Number(prod.sellingPrice || 0));
+    if (prodId) {
+      const prod = products.find((p) => p._id === prodId);
+      if (prod) {
+        setItemPrice(prod.sellingPrice ?? "");
+        setCustomProductName("");
+      }
     } else {
-      setItemPrice(0);
+      setItemPrice("");
     }
   };
 
   // ======================================================
-  // ADD ITEM HANDLER
+  // ADD ITEM HANDLER (Supports Catalog or Custom/Manual)
   // ======================================================
   const handleAddItem = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
 
-    if (!selectedProductId) {
-      showToast("Please select a sweet product first.", "error");
+    let finalName = "";
+    let finalProductId = null;
+
+    if (selectedProductId) {
+      const prod = products.find((p) => p._id === selectedProductId);
+      if (prod) {
+        finalName = prod.name;
+        finalProductId = prod._id;
+      }
+    } else if (customProductName.trim()) {
+      finalName = customProductName.trim();
+      finalProductId = null;
+    }
+
+    if (!finalName) {
+      showToast("Please select a sweet product or enter a custom item name.", "error");
       return;
     }
 
-    if (itemQuantity < 1) {
-      showToast("Quantity must be at least 1.", "error");
+    const qty = Number(itemQuantity);
+    if (!qty || isNaN(qty) || qty <= 0) {
+      showToast("Quantity must be greater than 0.", "error");
       return;
     }
 
-    const prod = products.find((p) => p._id === selectedProductId);
-    if (!prod) {
-      showToast("Selected product not found.", "error");
+    const price = Number(itemPrice);
+    if (isNaN(price) || price < 0 || itemPrice === "") {
+      showToast("Please enter a valid price.", "error");
       return;
     }
 
-    const price = Number(itemPrice || 0);
-    const existingIndex = items.findIndex(
-      (item) => item.productId === selectedProductId
-    );
+    // Check if item already exists in items list
+    const existingIndex = items.findIndex((item) => {
+      if (finalProductId && item.productId) {
+        return item.productId === finalProductId;
+      }
+      return (
+        !item.productId &&
+        item.productName?.toLowerCase().trim() === finalName.toLowerCase().trim()
+      );
+    });
 
     if (existingIndex > -1) {
       const updated = [...items];
-      const newQty = updated[existingIndex].quantity + itemQuantity;
+      const newQty = Number(updated[existingIndex].quantity) + qty;
       updated[existingIndex] = {
         ...updated[existingIndex],
         quantity: newQty,
-        total: newQty * updated[existingIndex].price,
+        price: price,
+        total: Math.round(newQty * price * 100) / 100,
       };
       setItems(updated);
     } else {
       setItems([
         ...items,
         {
-          productId: selectedProductId,
-          productName: prod.name,
-          quantity: itemQuantity,
-          price,
-          total: itemQuantity * price,
+          productId: finalProductId,
+          productName: finalName,
+          quantity: qty,
+          price: price,
+          total: Math.round(qty * price * 100) / 100,
+          isCustom: !finalProductId,
         },
       ]);
     }
 
+    // Reset inputs
     setSelectedProductId("");
-    setItemPrice(0);
-    setItemQuantity(1);
+    setCustomProductName("");
+    setItemPrice("");
+    setItemQuantity("1");
+  };
+
+  // ======================================================
+  // INLINE ITEM EDIT HANDLERS (Qty & Price in Table/Cards)
+  // ======================================================
+  const handleUpdateItemQuantity = (index, newQty) => {
+    const qty = Number(newQty);
+    if (isNaN(qty) || qty <= 0) return;
+    const updated = [...items];
+    const currentPrice = Number(updated[index].price || 0);
+    updated[index] = {
+      ...updated[index],
+      quantity: qty,
+      total: Math.round(qty * currentPrice * 100) / 100,
+    };
+    setItems(updated);
+  };
+
+  const handleUpdateItemPrice = (index, newPrice) => {
+    const price = Number(newPrice);
+    if (isNaN(price) || price < 0) return;
+    const updated = [...items];
+    const currentQty = Number(updated[index].quantity || 0);
+    updated[index] = {
+      ...updated[index],
+      price: price,
+      total: Math.round(currentQty * price * 100) / 100,
+    };
+    setItems(updated);
   };
 
   // ======================================================
@@ -331,7 +390,7 @@ const AdminCreateBill = () => {
         dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString() : null,
         address: address.trim(),
         items: items.map((it) => ({
-          productId: it.productId,
+          productId: it.productId || null,
           productName: it.productName,
           quantity: Number(it.quantity),
           price: Number(it.price),
@@ -413,12 +472,12 @@ const AdminCreateBill = () => {
   // RENDER
   // ======================================================
   return (
-    <div className="space-y-8 font-sans max-w-5xl mx-auto pb-10">
+    <div className="space-y-4 sm:space-y-7 md:space-y-8 font-sans max-w-5xl mx-auto px-0 sm:px-4 md:px-6 lg:px-8 pb-10 sm:pb-14">
       {/* 1. HEADER */}
       <CreateBillHeader orderId={orderId} />
 
       {/* 2. FORM */}
-      <form onSubmit={handleFormSubmit} className="space-y-8">
+      <form onSubmit={handleFormSubmit} className="space-y-4 sm:space-y-7 md:space-y-8">
         {/* CUSTOMER DETAILS SECTION */}
         <CustomerDetailsSection
           customerName={customerName}
@@ -443,6 +502,8 @@ const AdminCreateBill = () => {
           products={products}
           selectedProductId={selectedProductId}
           handleProductChange={handleProductChange}
+          customProductName={customProductName}
+          setCustomProductName={setCustomProductName}
           itemPrice={itemPrice}
           setItemPrice={setItemPrice}
           itemQuantity={itemQuantity}
@@ -450,6 +511,8 @@ const AdminCreateBill = () => {
           handleAddItem={handleAddItem}
           items={items}
           handleRemoveItem={handleRemoveItem}
+          handleUpdateItemQuantity={handleUpdateItemQuantity}
+          handleUpdateItemPrice={handleUpdateItemPrice}
           errors={errors}
         />
 
