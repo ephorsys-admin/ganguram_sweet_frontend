@@ -163,9 +163,8 @@ const BillItemsSection = ({
                 >
                   <ChevronDown
                     size={18}
-                    className={`transition-transform duration-200 ${
-                      isOpen ? "rotate-180" : ""
-                    }`}
+                    className={`transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
               </div>
@@ -192,11 +191,10 @@ const BillItemsSection = ({
                         <div
                           key={p._id}
                           onClick={() => handleSelectProduct(p)}
-                          className={`p-3.5 flex items-center justify-between gap-3 cursor-pointer transition ${
-                            isSelected
+                          className={`p-3.5 flex items-center justify-between gap-3 cursor-pointer transition ${isSelected
                               ? "bg-[#FAF6F0] text-[#a65827]"
                               : "hover:bg-[#FAF6F0]/60 text-[#3D271B]"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3 min-w-0 flex-1">
                             <div className="w-11 h-11 rounded-xl bg-amber-50 border border-[#E6CCB2]/30 overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
