@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Star, Heart, ShoppingBag } from "lucide-react";
+import { Star, Heart, ShoppingBag, Plus, Minus } from "lucide-react";
+import { useSelector, useDispatch } from "react-redux";
+import { addToCart, updateQuantity } from "../../redux/features/cart/cartSlice";
+import {
+  addBackendCartItem,
+  updateBackendCartItem,
+} from "../../redux/features/cart/cartThunk";
 
 /**
  * Small decorative "photo" placeholder — replace the <SweetThumb />
@@ -23,6 +29,7 @@ const SweetThumb = ({ bg }) => (
 
 const ProductCard = ({ product, onViewDetails }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [liked, setLiked] = useState(false);
 
   const price = product.sellingPrice || product.price || 0;
@@ -38,6 +45,10 @@ const ProductCard = ({ product, onViewDetails }) => {
   const targetId = product._id || product.slug || product.id;
   const isAvailable = product.isAvailable !== false;
   const lowStock = isAvailable && product.stock > 0 && product.stock <= 10;
+
+  const { items: cartItems } = useSelector((state) => state.cart);
+  const cartItem = cartItems.find((item) => item.id === targetId || item.id === product._id);
+  const cartQty = cartItem ? cartItem.quantity : 0;
 
   const handleDetailsClick = () => {
     if (onViewDetails) {
@@ -154,16 +165,72 @@ const ProductCard = ({ product, onViewDetails }) => {
 
         {/* Action — mt-auto pins this to the bottom of the card no matter
             how much text sits above it, so buttons stay aligned in a row */}
-        <motion.button
-          onClick={handleDetailsClick}
-          whileTap={{ scale: 0.97 }}
-          disabled={!isAvailable}
-          className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold text-white transition cursor-pointer disabled:opacity-50 sm:text-sm"
-          style={{ backgroundColor: "#8A2E2E" }}
-        >
-          <ShoppingBag size={13} />
-          {isAvailable ? "View Details" : "Out of Stock"}
-        </motion.button>
+        {!isAvailable ? (
+          <button
+            disabled
+            className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold text-stone-400 bg-stone-100 border border-stone-200 cursor-not-allowed sm:text-sm"
+          >
+            Out of Stock
+          </button>
+        ) : cartQty === 0 ? (
+          <motion.button
+            onClick={(e) => {
+              e.stopPropagation();
+              dispatch(addToCart({ product, quantity: 1 }));
+              dispatch(addBackendCartItem({ productId: targetId, quantity: 1 }));
+            }}
+            whileTap={{ scale: 0.95 }}
+            className="mt-auto flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold text-white transition cursor-pointer shadow-xs sm:text-sm hover:brightness-110 active:opacity-90"
+            style={{ backgroundColor: "#8A2E2E" }}
+          >
+            <Plus size={14} />
+            Add to Cart
+          </motion.button>
+        ) : (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="mt-auto flex w-full items-center justify-between rounded-lg border border-[#8A2E2E] bg-[#FFF8EC] py-1 px-1.5 shadow-2xs"
+          >
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.85 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                const newQty = cartQty - 1;
+                dispatch(updateQuantity({ productId: targetId, quantity: newQty }));
+                dispatch(updateBackendCartItem({ productId: targetId, quantity: newQty }));
+              }}
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-[#8A2E2E] text-white hover:bg-[#5C2A1A] transition cursor-pointer"
+              aria-label="Decrease quantity"
+            >
+              <Minus size={13} />
+            </motion.button>
+
+            <div className="flex items-center gap-1">
+              <span className="text-xs sm:text-sm font-black font-mono text-[#3D1F12]">
+                {cartQty}
+              </span>
+              <span className="text-[10px] font-bold text-[#8A2E2E]">in box</span>
+            </div>
+
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.85 }}
+              disabled={typeof product.stock === "number" && cartQty >= product.stock}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (typeof product.stock === "number" && cartQty >= product.stock) return;
+                const newQty = cartQty + 1;
+                dispatch(updateQuantity({ productId: targetId, quantity: newQty }));
+                dispatch(updateBackendCartItem({ productId: targetId, quantity: newQty }));
+              }}
+              className="flex h-7 w-7 items-center justify-center rounded-md bg-[#8A2E2E] text-white hover:bg-[#5C2A1A] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Increase quantity"
+            >
+              <Plus size={13} />
+            </motion.button>
+          </div>
+        )}
       </div>
     </motion.div>
   );

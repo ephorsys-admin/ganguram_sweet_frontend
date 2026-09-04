@@ -13,8 +13,15 @@ import {
   Loader2,
   PackageCheck,
   RotateCcw,
+  Plus,
+  Minus,
+  ShoppingBag,
+  Check,
 } from "lucide-react";
+import { useSelector, useDispatch } from "react-redux";
 import { useGetProductDetailsPublicQuery } from "../../redux/services/adminApi";
+import { addToCart, openCart } from "../../redux/features/cart/cartSlice";
+import { addBackendCartItem } from "../../redux/features/cart/cartThunk";
 
 const BADGES = [
   { key: "isBestSeller", label: "Bestseller", color: "#8A2E2E" },
@@ -37,11 +44,48 @@ const ProductDetails = () => {
     return raw ?? null;
   }, [response]);
 
+  const dispatch = useDispatch();
+  const [selectedQty, setSelectedQty] = useState(1);
+  const [justAdded, setJustAdded] = useState(false);
+  const { items: cartItems } = useSelector((state) => state.cart);
+  const cartItem = cartItems.find(
+    (item) => item.id === productId || item.id === product?._id
+  );
+  const inCartQty = cartItem ? cartItem.quantity : 0;
+
   const [activeImage, setActiveImage] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const [liked, setLiked] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const handleAddToCart = (openDrawer = false) => {
+    if (!product || !product.isAvailable) return;
+    dispatch(addToCart({ product, quantity: selectedQty }));
+    dispatch(
+      addBackendCartItem({
+        productId: product._id || productId,
+        quantity: selectedQty,
+      })
+    );
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 2000);
+    if (openDrawer) {
+      dispatch(openCart());
+    }
+  };
+
+  const handleBuyNow = () => {
+    if (!product || !product.isAvailable) return;
+    dispatch(addToCart({ product, quantity: selectedQty }));
+    dispatch(
+      addBackendCartItem({
+        productId: product._id || productId,
+        quantity: selectedQty,
+      })
+    );
+    navigate("/checkout");
+  };
 
   const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -282,15 +326,84 @@ const ProductDetails = () => {
               </div>
             </div>
 
-            {/* CTA */}
-            <div className="mt-5 hidden md:block">
-              <button
-                onClick={() => navigate(`/product/${productId}/order`)}
-                disabled={!product.isAvailable}
-                className="w-full bg-[#8A2E2E] hover:bg-[#5C2A1A] text-white font-bold py-3.5 px-6 rounded-xl text-sm transition cursor-pointer disabled:opacity-60 shadow-md shadow-[#8A2E2E]/20"
-              >
-                {product.isAvailable ? "Order Now" : "Out of Stock"}
-              </button>
+            {/* CTA with Quantity Selection */}
+            <div className="mt-5 hidden md:flex flex-col gap-3.5">
+              {/* Quantity Selector Row */}
+              {product.isAvailable && (
+                <div className="flex items-center justify-between bg-[#FAF6F0] rounded-xl p-3 border border-[#F0E4CC]">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold text-[#6E5A4F]">Select Quantity</span>
+                    <span className="text-xs font-mono font-bold text-[#a65827]">
+                      Subtotal: ₹{product.sellingPrice * selectedQty}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center border border-[#E6CCB2] rounded-xl bg-white overflow-hidden shadow-2xs">
+                    <button
+                      type="button"
+                      disabled={selectedQty <= 1}
+                      onClick={() => setSelectedQty((prev) => Math.max(1, prev - 1))}
+                      className="px-3 py-2 text-[#5C2A1A] hover:bg-[#FAF6F0] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus size={15} />
+                    </button>
+                    <span className="px-4 text-sm font-black font-mono text-[#3D1F12] min-w-[28px] text-center">
+                      {selectedQty}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={Boolean(product.stock && selectedQty >= product.stock)}
+                      onClick={() =>
+                        setSelectedQty((prev) =>
+                          product.stock ? Math.min(product.stock, prev + 1) : prev + 1
+                        )
+                      }
+                      className="px-3 py-2 text-[#5C2A1A] hover:bg-[#FAF6F0] transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      aria-label="Increase quantity"
+                    >
+                      <Plus size={15} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => handleAddToCart(true)}
+                  disabled={!product.isAvailable}
+                  className="flex items-center justify-center gap-2 rounded-xl border-2 border-[#8A2E2E] bg-[#FFF8EC] py-3.5 px-4 text-sm font-bold text-[#8A2E2E] hover:bg-[#8A2E2E] hover:text-white transition shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {justAdded ? (
+                    <>
+                      <Check size={18} />
+                      <span>Added to Box!</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag size={18} />
+                      <span>Add to Cart ({selectedQty})</span>
+                    </>
+                  )}
+                </motion.button>
+
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleBuyNow}
+                  disabled={!product.isAvailable}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[#8A2E2E] hover:bg-[#5C2A1A] py-3.5 px-4 text-sm font-bold text-white shadow-md shadow-[#8A2E2E]/20 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span>Order Now</span>
+                </motion.button>
+              </div>
+
+              {inCartQty > 0 && (
+                <p className="text-xs text-center font-bold text-[#2E8B3D] bg-[#F1F8F0] py-1.5 px-3 rounded-lg">
+                  ✓ You currently have {inCartQty} in your sweet box
+                </p>
+              )}
             </div>
 
             {/* Trust badges */}
@@ -357,23 +470,72 @@ const ProductDetails = () => {
         <motion.div
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#F0E4CC] bg-white/95 backdrop-blur px-4 py-3 md:hidden"
+          className="fixed bottom-0 left-0 right-0 z-40 border-t border-[#F0E4CC] bg-white/95 backdrop-blur px-3 py-2.5 md:hidden"
         >
-          <div className="mx-auto flex max-w-6xl items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-[#9A8A78]">{product.name}</p>
-              <p className="text-base font-extrabold" style={{ color: "#3D1F12" }}>
-                ₹{product.sellingPrice}
-                <span className="ml-1 text-xs font-medium text-[#9A8A78]">/ {product.unit}</span>
-              </p>
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-2">
+            {/* Price & Quantity Stepper */}
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-baseline gap-1">
+                <span className="text-base font-black text-[#3D1F12]">
+                  ₹{product.sellingPrice * selectedQty}
+                </span>
+                <span className="text-[10px] font-medium text-[#9A8A78]">
+                  ({selectedQty} {product.unit || "pc"})
+                </span>
+              </div>
+
+              {product.isAvailable && (
+                <div className="flex items-center border border-[#E6CCB2] rounded-lg bg-white overflow-hidden mt-1 w-fit shadow-2xs">
+                  <button
+                    type="button"
+                    disabled={selectedQty <= 1}
+                    onClick={() => setSelectedQty((prev) => Math.max(1, prev - 1))}
+                    className="px-2 py-0.5 text-[#5C2A1A] hover:bg-[#FAF6F0] disabled:opacity-40"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <span className="px-2 text-xs font-bold font-mono text-[#3D1F12] min-w-[18px] text-center">
+                    {selectedQty}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={Boolean(product.stock && selectedQty >= product.stock)}
+                    onClick={() =>
+                      setSelectedQty((prev) =>
+                        product.stock ? Math.min(product.stock, prev + 1) : prev + 1
+                      )
+                    }
+                    className="px-2 py-0.5 text-[#5C2A1A] hover:bg-[#FAF6F0] disabled:opacity-40"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => navigate(`/product/${productId}/order`)}
-              disabled={!product.isAvailable}
-              className="flex-shrink-0 bg-[#8A2E2E] hover:bg-[#5C2A1A] text-white font-bold py-3 px-6 rounded-xl text-sm transition cursor-pointer disabled:opacity-60"
-            >
-              {product.isAvailable ? "Order Now" : "Out of Stock"}
-            </button>
+
+            {/* Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleAddToCart(true)}
+                disabled={!product.isAvailable}
+                className="flex items-center justify-center gap-1 rounded-xl border border-[#8A2E2E] bg-[#FFF8EC] py-2.5 px-3 text-xs font-bold text-[#8A2E2E] active:scale-95 disabled:opacity-50"
+              >
+                <ShoppingBag size={14} />
+                <span>{justAdded ? "Added!" : "Add"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                disabled={!product.isAvailable}
+                className="flex-shrink-0 bg-[#8A2E2E] hover:bg-[#5C2A1A] text-white font-bold py-2.5 px-4 rounded-xl text-xs transition active:scale-95 disabled:opacity-60 shadow-xs"
+              >
+                {product.isAvailable ? "Order Now" : "Out of Stock"}
+              </button>
+            </div>
           </div>
         </motion.div>
       </AnimatePresence>

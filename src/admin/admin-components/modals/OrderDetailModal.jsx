@@ -178,20 +178,48 @@ const OrderDetailModal = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#FAF6F0] text-[#3D271B]">
-                    <tr>
-                      <td className="px-4 py-3.5 font-bold">
-                        {order.productName}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-bold font-mono">
-                        {order.quantity}
-                      </td>
-                      <td className="px-4 py-3.5 text-right font-mono">
-                        ₹{Number(order.productPrice || 0).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3.5 text-right font-black font-mono text-[#a65827]">
-                        ₹{Number(order.totalAmount || 0).toFixed(2)}
-                      </td>
-                    </tr>
+                    {order.items && order.items.length > 0 ? (
+                      order.items.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className="px-4 py-3.5 font-bold">
+                            <div className="flex items-center gap-2">
+                              {item.productImage && (
+                                <img
+                                  src={item.productImage}
+                                  alt={item.productName}
+                                  className="w-8 h-8 rounded-lg object-cover border border-[#E6CCB2]/30 shrink-0"
+                                />
+                              )}
+                              <span>{item.productName}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3.5 text-center font-bold font-mono">
+                            {item.quantity}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-mono">
+                            ₹{Number(item.productPrice || 0).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3.5 text-right font-black font-mono text-[#a65827]">
+                            ₹{Number(item.subTotal || item.quantity * item.productPrice).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className="px-4 py-3.5 font-bold">
+                          {order.productName}
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-bold font-mono">
+                          {order.quantity}
+                        </td>
+                        <td className="px-4 py-3.5 text-right font-mono">
+                          ₹{Number(order.productPrice || 0).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3.5 text-right font-black font-mono text-[#a65827]">
+                          ₹{Number(order.totalAmount || 0).toFixed(2)}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>

@@ -12,6 +12,7 @@ const Gallery = lazy(() => import("../web/webPages/Gallery"));
 const Contact = lazy(() => import("../web/webPages/Contact"));
 const PrivacyPolicy = lazy(() => import("../web/webPages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("../web/webPages/TermsOfService"));
+const CheckoutPage = lazy(() => import("../web/webPages/CheckoutPage"));
 
 const PublicRoutes = (
   <Route path="/" element={<MainLayout />}>
@@ -20,6 +21,8 @@ const PublicRoutes = (
     <Route path="/OurSweets" element={<Navigate to="/products" replace />} />
     <Route path="/products/:productId" element={<ProductDetails />} />
     <Route path="/product/:productId/order" element={<OrderPage />} />
+    <Route path="/checkout" element={<CheckoutPage />} />
+    <Route path="/cart" element={<Navigate to="/checkout" replace />} />
     <Route path="/category/:categoryId" element={<CategoryListing />} />
     <Route path="/about" element={<AboutUs />} />
     <Route path="/gallery" element={<Gallery />} />
