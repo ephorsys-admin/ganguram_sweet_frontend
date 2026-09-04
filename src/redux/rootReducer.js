@@ -4,6 +4,7 @@ import categoryReducer from "./features/category/categorySlice";
 import productReducer from "./features/product/productSlice";
 import orderReducer from "./features/order/orderSlice";
 import billReducer from "./features/bill/billSlice";
+import cartReducer from "./features/cart/cartSlice";
 import { adminApi } from "./services/adminApi";
 
 import contactReducer from "./features/contact/contactSlice";
@@ -16,10 +17,11 @@ const rootReducer = combineReducers({
   product: productReducer,
   order: orderReducer,
   bill: billReducer,
+  cart: cartReducer,
   contact: contactReducer,
   advertisement: advertisementReducer,
   dashboard: dashboardReducer,
   [adminApi.reducerPath]: adminApi.reducer,
 });
 
-export default rootReducer;
+export default rootReducer;

@@ -15,7 +15,7 @@ const storage = storageModule.default || storageModule;
 const persistConfig = {
   key: "root",
   storage,
-  whitelist: ["auth"],
+  whitelist: ["auth", "cart"],
 };
 
 // =============================================

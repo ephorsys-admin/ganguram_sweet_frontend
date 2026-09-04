@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Phone } from "lucide-react";
+import { Menu, X, Phone, ShoppingBag } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { openCart } from "../redux/features/cart/cartSlice";
+import CartDrawer from "../web/web-components/CartDrawer";
 
 const NAV_LINKS = [
   { name: "Home", path: "/" },
@@ -13,6 +16,8 @@ const NAV_LINKS = [
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const dispatch = useDispatch();
+  const { totalQuantity, totalAmount } = useSelector((state) => state.cart);
 
   return (
     <motion.header
@@ -61,43 +66,84 @@ const Navbar = () => {
           ))}
         </ul>
 
-        {/* Contact Button */}
-        <NavLink
-          to="/contact"
-          className="hidden lg:flex items-center gap-2 rounded-full bg-yellow-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-yellow-600 transition"
-        >
-          <Phone size={16} />
-          Contact Now
-        </NavLink>
-
-        {/* Mobile Toggle */}
-        <button
-          onClick={() => setOpen(!open)}
-          className="lg:hidden"
-          style={{ color: "#5C2A1A" }}
-        >
-          <AnimatePresence mode="wait">
-            {open ? (
-              <motion.div
-                key="close"
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: 90, opacity: 0 }}
-              >
-                <X size={28} />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="menu"
-                initial={{ rotate: 90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                exit={{ rotate: -90, opacity: 0 }}
-              >
-                <Menu size={28} />
-              </motion.div>
+        {/* Desktop Right: Cart + Contact */}
+        <div className="hidden lg:flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => dispatch(openCart())}
+            className="relative flex items-center gap-2 rounded-full border border-[#DFA250]/60 bg-white/90 px-4 py-2 text-sm font-bold text-[#5C2A1A] hover:border-[#8A2E2E] hover:text-[#8A2E2E] shadow-2xs transition cursor-pointer"
+            aria-label="View Sweet Box"
+          >
+            <div className="relative">
+              <ShoppingBag size={18} />
+              {totalQuantity > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#8A2E2E] px-1 text-[10px] font-black text-white shadow-xs animate-pulse">
+                  {totalQuantity}
+                </span>
+              )}
+            </div>
+            <span>Cart</span>
+            {totalQuantity > 0 && (
+              <span className="rounded-md bg-[#FAF0E6] px-1.5 py-0.5 text-xs font-mono font-extrabold text-[#8A2E2E]">
+                ({totalQuantity})
+              </span>
             )}
-          </AnimatePresence>
-        </button>
+          </button>
+
+          <NavLink
+            to="/contact"
+            className="flex items-center gap-2 rounded-full bg-yellow-500 px-5 py-2 text-sm font-bold text-white hover:bg-yellow-600 transition"
+          >
+            <Phone size={15} />
+            Contact Now
+          </NavLink>
+        </div>
+
+        {/* Mobile Right: Cart + Toggle */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <button
+            type="button"
+            onClick={() => dispatch(openCart())}
+            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white border border-[#E8C68A] text-[#5C2A1A] cursor-pointer"
+            aria-label="Open Sweet Box Cart"
+          >
+            <ShoppingBag size={19} />
+            {totalQuantity > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#8A2E2E] px-1 text-[10px] font-black text-white">
+                {totalQuantity}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setOpen(!open)}
+            className="p-1 cursor-pointer"
+            style={{ color: "#5C2A1A" }}
+            aria-label="Toggle menu"
+          >
+            <AnimatePresence mode="wait">
+              {open ? (
+                <motion.div
+                  key="close"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                >
+                  <X size={28} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="menu"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                >
+                  <Menu size={28} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </button>
+        </div>
       </nav>
 
       {/* Mobile Menu */}
@@ -132,7 +178,24 @@ const Navbar = () => {
                 </li>
               ))}
 
-              <li className="pt-2">
+              <li className="pt-2 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    dispatch(openCart());
+                  }}
+                  className="flex items-center justify-between rounded-xl bg-white border border-[#E8C68A] px-4 py-3 font-bold text-[#5C2A1A] cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <ShoppingBag size={18} className="text-[#8A2E2E]" />
+                    <span>Your Sweet Box</span>
+                  </div>
+                  <span className="rounded-full bg-[#8A2E2E] px-2.5 py-0.5 text-xs text-white">
+                    {totalQuantity} {totalQuantity === 1 ? "item" : "items"}
+                  </span>
+                </button>
+
                 <NavLink
                   to="/contact"
                   onClick={() => setOpen(false)}
@@ -146,6 +209,9 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Slide-over Cart Drawer */}
+      <CartDrawer />
     </motion.header>
   );
 };

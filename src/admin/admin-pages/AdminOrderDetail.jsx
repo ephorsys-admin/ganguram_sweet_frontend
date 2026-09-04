@@ -239,35 +239,65 @@ const AdminOrderDetail = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#FAF6F0] text-[#3D271B]">
-                  <tr>
-                    <td className="px-5 py-4 font-bold">
-                      <div className="flex items-center gap-3.5">
-                        {(order.productImage ||
-                          order.product?.images?.[0]?.url) && (
-                          <img
-                            src={
-                              order.productImage ||
-                              order.product.images[0].url
-                            }
-                            alt={order.productName}
-                            className="w-12 h-12 rounded-xl object-cover border border-[#E6CCB2]/30 shrink-0 shadow-xs"
-                          />
-                        )}
-                        <span className="font-bold text-base text-[#3D271B]">
-                          {order.productName}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-center font-bold font-mono text-slate-700">
-                      {order.quantity}
-                    </td>
-                    <td className="px-5 py-4 text-right font-mono font-semibold text-slate-700">
-                      ₹{Number(order.productPrice || 0).toFixed(2)}
-                    </td>
-                    <td className="px-5 py-4 text-right font-black font-mono text-[#a65827] text-base">
-                      ₹{Number(order.totalAmount || 0).toFixed(2)}
-                    </td>
-                  </tr>
+                  {order.items && order.items.length > 0 ? (
+                    order.items.map((item, idx) => (
+                      <tr key={idx}>
+                        <td className="px-5 py-4 font-bold">
+                          <div className="flex items-center gap-3.5">
+                            {item.productImage && (
+                              <img
+                                src={item.productImage}
+                                alt={item.productName}
+                                className="w-12 h-12 rounded-xl object-cover border border-[#E6CCB2]/30 shrink-0 shadow-xs"
+                              />
+                            )}
+                            <span className="font-bold text-base text-[#3D271B]">
+                              {item.productName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-center font-bold font-mono text-slate-700">
+                          {item.quantity}
+                        </td>
+                        <td className="px-5 py-4 text-right font-mono font-semibold text-slate-700">
+                          ₹{Number(item.productPrice || 0).toFixed(2)}
+                        </td>
+                        <td className="px-5 py-4 text-right font-black font-mono text-[#a65827] text-base">
+                          ₹{Number(item.subTotal || item.quantity * item.productPrice).toFixed(2)}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td className="px-5 py-4 font-bold">
+                        <div className="flex items-center gap-3.5">
+                          {(order.productImage ||
+                            order.product?.images?.[0]?.url) && (
+                            <img
+                              src={
+                                order.productImage ||
+                                order.product.images[0].url
+                              }
+                              alt={order.productName}
+                              className="w-12 h-12 rounded-xl object-cover border border-[#E6CCB2]/30 shrink-0 shadow-xs"
+                            />
+                          )}
+                          <span className="font-bold text-base text-[#3D271B]">
+                            {order.productName}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-center font-bold font-mono text-slate-700">
+                        {order.quantity}
+                      </td>
+                      <td className="px-5 py-4 text-right font-mono font-semibold text-slate-700">
+                        ₹{Number(order.productPrice || 0).toFixed(2)}
+                      </td>
+                      <td className="px-5 py-4 text-right font-black font-mono text-[#a65827] text-base">
+                        ₹{Number(order.totalAmount || 0).toFixed(2)}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
