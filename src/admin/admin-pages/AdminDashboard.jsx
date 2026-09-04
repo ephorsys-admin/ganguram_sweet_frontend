@@ -18,7 +18,10 @@ import {
 import { motion } from "framer-motion";
 import { getDashboardStats } from "../../redux/features/dashboard/dashboardThunk";
 import { getAllContacts } from "../../redux/features/contact/contactThunk";
-import { getOrders, updateOrderStatus } from "../../redux/features/order/orderThunk";
+import {
+  getOrders,
+  updateOrderStatus,
+} from "../../redux/features/order/orderThunk";
 import { useToast } from "../../context/ToastContext";
 
 const currency = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
@@ -27,9 +30,13 @@ const AdminDashboard = () => {
   const dispatch = useDispatch();
   const { showToast } = useToast();
 
-  const { stats, isLoading: statsLoading } = useSelector((state) => state.dashboard);
-  const { contacts: inquiries = [], isLoading: inquiriesLoading } = useSelector((state) => state.contact);
-  const { orders = [], isLoading: ordersLoading } = useSelector((state) => state.order);
+  const { stats, isLoading: statsLoading } = useSelector(
+    (state) => state.dashboard
+  );
+  const { contacts: inquiries = [] } = useSelector(
+    (state) => state.contact
+  );
+  const { orders = [] } = useSelector((state) => state.order);
   const admin = useSelector((state) => state.auth.user);
 
   const adminName = admin?.name || "Admin User";
@@ -43,7 +50,9 @@ const AdminDashboard = () => {
 
   const handleUpdateStatus = async (orderId, newStatus) => {
     try {
-      const resultAction = await dispatch(updateOrderStatus({ orderId, orderStatus: newStatus })).unwrap();
+      const resultAction = await dispatch(
+        updateOrderStatus({ orderId, orderStatus: newStatus })
+      ).unwrap();
       if (resultAction.success) {
         showToast(`Order marked as ${newStatus}!`, "success");
         dispatch(getOrders({ limit: 100 }));
@@ -65,11 +74,19 @@ const AdminDashboard = () => {
     monthlySales: [],
   };
 
-  const pendingOrders = orders.filter((o) => o.orderStatus === "Pending" || o.orderStatus === "Preparing" || o.orderStatus === "Confirmed").length;
+  const pendingOrders = orders.filter(
+    (o) =>
+      o.orderStatus === "Pending" ||
+      o.orderStatus === "Preparing" ||
+      o.orderStatus === "Confirmed"
+  ).length;
 
   // ---- Chart data (weekly / monthly toggle) ----
   const [chartView, setChartView] = useState("weekly");
-  const chartData = chartView === "weekly" ? activeStats.weeklySales : activeStats.monthlySales;
+  const chartData =
+    chartView === "weekly"
+      ? activeStats.weeklySales
+      : activeStats.monthlySales;
   const labelKey = chartView === "weekly" ? "day" : "month";
   const maxVal = Math.max(1, ...(chartData || []).map((d) => d.sales || 0));
 
@@ -137,49 +154,59 @@ const AdminDashboard = () => {
 
   if (statsLoading && !stats) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[80vh] bg-slate-50 space-y-3">
-        <Loader2 className="h-10 w-10 text-[#DFA250] animate-spin" />
-        <span className="text-xs text-[#6E5A4F] font-semibold">Loading Dashboard Data...</span>
+      <div className="flex flex-col items-center justify-center min-h-[80vh] bg-slate-50 space-y-4">
+        <Loader2 className="h-12 w-12 text-[#DFA250] animate-spin" />
+        <span className="text-sm md:text-base text-[#6E5A4F] font-semibold">
+          Loading Dashboard Data...
+        </span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 bg-slate-50 -m-4 sm:-m-6 p-4 sm:p-6 min-h-screen">
+    <div className="space-y-8 bg-slate-50 -m-4 sm:-m-6 p-4 sm:p-6 md:p-8 min-h-screen">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
             Welcome back, {adminName.split(" ")[0]}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm sm:text-base text-slate-500 mt-1 font-medium">
             You're signed in as{" "}
-            <span className="font-semibold text-indigo-600">{adminRole}</span>. Here's what's
-            happening with your store today.
+            <span className="font-bold text-indigo-600">{adminRole}</span>.
+            Here's what's happening with your store today.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-medium text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="flex items-center gap-2.5 text-xs sm:text-sm font-bold text-emerald-700 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-200 shadow-xs">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           All systems online
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className={`grid grid-cols-2 sm:grid-cols-3 ${admin?.role === "super_admin" ? "xl:grid-cols-6" : "xl:grid-cols-5"} gap-4`}>
+      <div
+        className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ${
+          admin?.role === "super_admin" ? "xl:grid-cols-6" : "xl:grid-cols-5"
+        } gap-4 sm:gap-5`}
+      >
         {statCards.map(({ label, value, icon: Icon, color, bg, to }) => (
           <Link to={to} key={label} className="block">
             <motion.div
-              whileHover={{ y: -2 }}
-              className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col justify-between gap-3"
+              whileHover={{ y: -3 }}
+              className="bg-white p-5 rounded-3xl border border-slate-200/70 shadow-xs hover:shadow-md transition-shadow h-full flex flex-col justify-between gap-4"
             >
-              <div className={`w-9 h-9 rounded-lg ${bg} ${color} flex items-center justify-center`}>
-                <Icon size={18} />
+              <div
+                className={`w-12 h-12 rounded-2xl ${bg} ${color} flex items-center justify-center shadow-xs`}
+              >
+                <Icon size={24} />
               </div>
               <div>
-                <p className="text-[11px] font-medium text-slate-400 uppercase tracking-wide">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                   {label}
                 </p>
-                <h3 className="text-xl font-bold text-slate-900 mt-0.5 truncate">{value}</h3>
+                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mt-1 truncate">
+                  {value}
+                </h3>
               </div>
             </motion.div>
           </Link>
@@ -187,25 +214,30 @@ const AdminDashboard = () => {
       </div>
 
       {/* Chart + Snapshot row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sales Chart */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm lg:col-span-2">
-          <div className="flex justify-between items-center mb-4">
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/70 shadow-xs lg:col-span-2 space-y-4">
+          <div className="flex flex-wrap justify-between items-center gap-3 mb-2">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Sales Trend</h2>
-              <p className="text-xs text-slate-400">
-                {chartView === "weekly" ? "Revenue over the last 7 days" : "Revenue by month"}
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                Sales Trend
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 font-medium">
+                {chartView === "weekly"
+                  ? "Revenue over the last 7 days"
+                  : "Revenue by month"}
               </p>
             </div>
-            <div className="flex bg-slate-100 rounded-lg p-1 text-xs font-medium">
+            <div className="flex bg-slate-100 rounded-xl p-1 text-xs sm:text-sm font-bold">
               {["weekly", "monthly"].map((v) => (
                 <button
                   key={v}
                   onClick={() => setChartView(v)}
-                  className={`px-3 py-1 rounded-md capitalize transition-colors ${chartView === v
-                      ? "bg-white text-indigo-600 shadow-sm"
-                      : "text-slate-500 hover:text-slate-700"
-                    }`}
+                  className={`px-4 py-1.5 rounded-lg capitalize transition-colors cursor-pointer ${
+                    chartView === v
+                      ? "bg-white text-indigo-600 shadow-xs font-bold"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
                 >
                   {v}
                 </button>
@@ -213,26 +245,65 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="relative w-full overflow-hidden">
-            <svg className="w-full h-44" viewBox="0 0 500 160" preserveAspectRatio="none">
+          <div className="relative w-full overflow-hidden pt-2">
+            <svg
+              className="w-full h-48 sm:h-56"
+              viewBox="0 0 500 160"
+              preserveAspectRatio="none"
+            >
               <defs>
                 <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#6366F1" stopOpacity="0.22" />
+                  <stop offset="0%" stopColor="#6366F1" stopOpacity="0.25" />
                   <stop offset="100%" stopColor="#6366F1" stopOpacity="0" />
                 </linearGradient>
               </defs>
-              <line x1="0" y1="40" x2="500" y2="40" stroke="#E2E8F0" strokeWidth="1" />
-              <line x1="0" y1="80" x2="500" y2="80" stroke="#E2E8F0" strokeWidth="1" />
-              <line x1="0" y1="120" x2="500" y2="120" stroke="#E2E8F0" strokeWidth="1" />
+              <line
+                x1="0"
+                y1="40"
+                x2="500"
+                y2="40"
+                stroke="#E2E8F0"
+                strokeWidth="1"
+              />
+              <line
+                x1="0"
+                y1="80"
+                x2="500"
+                y2="80"
+                stroke="#E2E8F0"
+                strokeWidth="1"
+              />
+              <line
+                x1="0"
+                y1="120"
+                x2="500"
+                y2="120"
+                stroke="#E2E8F0"
+                strokeWidth="1"
+              />
               {areaPath && <path d={areaPath} fill="url(#chartGrad)" />}
               {linePath && (
-                <path d={linePath} fill="none" stroke="#6366F1" strokeWidth="3" strokeLinecap="round" />
+                <path
+                  d={linePath}
+                  fill="none"
+                  stroke="#6366F1"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                />
               )}
               {points.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r="4" fill="#fff" stroke="#6366F1" strokeWidth="2.5" />
+                <circle
+                  key={i}
+                  cx={p.x}
+                  cy={p.y}
+                  r="5"
+                  fill="#fff"
+                  stroke="#6366F1"
+                  strokeWidth="3"
+                />
               ))}
             </svg>
-            <div className="flex justify-between text-[10px] text-slate-400 font-medium px-1 pt-2 border-t border-slate-100">
+            <div className="flex justify-between text-xs text-slate-500 font-bold px-2 pt-3 border-t border-slate-100">
               {(chartData || []).map((d) => (
                 <span key={d[labelKey]}>{d[labelKey]}</span>
               ))}
@@ -241,108 +312,160 @@ const AdminDashboard = () => {
         </div>
 
         {/* Today's Snapshot */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
-          <h2 className="text-base font-semibold text-slate-900 pb-3">Today's Snapshot</h2>
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/70 shadow-xs flex flex-col justify-between gap-4">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 border-b border-slate-100 pb-3">
+            Today's Snapshot
+          </h2>
 
-          <div className="space-y-3 flex-1">
-            <div className="flex items-center justify-between border-b border-slate-50 pb-2.5">
-              <div className="flex items-center gap-2.5 text-slate-600">
-                <CalendarDays size={14} className="text-indigo-500" />
-                <span className="text-xs font-medium">Today's Orders</span>
+          <div className="space-y-4 flex-1">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3 text-slate-600">
+                <CalendarDays size={18} className="text-indigo-500" />
+                <span className="text-sm font-semibold">Today's Orders</span>
               </div>
-              <span className="text-xs font-bold text-slate-900">{activeStats.todayOrders}</span>
+              <span className="text-base font-black text-slate-900">
+                {activeStats.todayOrders}
+              </span>
             </div>
 
-            <div className="flex items-center justify-between border-b border-slate-50 pb-2.5">
-              <div className="flex items-center gap-2.5 text-slate-600">
-                <Clock size={14} className="text-amber-500" />
-                <span className="text-xs font-medium">Pending / Processing</span>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3 text-slate-600">
+                <Clock size={18} className="text-amber-500" />
+                <span className="text-sm font-semibold">
+                  Pending / Processing
+                </span>
               </div>
-              <span className="text-xs font-bold text-amber-600">{pendingOrders}</span>
+              <span className="text-base font-black text-amber-600">
+                {pendingOrders}
+              </span>
             </div>
 
-            <div className="flex items-center justify-between border-b border-slate-50 pb-2.5">
-              <div className="flex items-center gap-2.5 text-slate-600">
-                <AlertCircle size={14} className="text-rose-500" />
-                <span className="text-xs font-medium">New Inquiries Today</span>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3 text-slate-600">
+                <AlertCircle size={18} className="text-rose-500" />
+                <span className="text-sm font-semibold">
+                  New Inquiries Today
+                </span>
               </div>
-              <span className="text-xs font-bold text-rose-600">{activeStats.todayInquiries}</span>
+              <span className="text-base font-black text-rose-600">
+                {activeStats.todayInquiries}
+              </span>
             </div>
           </div>
 
-          <div className="bg-indigo-50/60 p-3.5 rounded-xl border border-indigo-100 text-[11px] text-indigo-800 leading-relaxed mt-3">
-            💡 Respond to catering inquiries within a few hours — quick replies convert far
-            better on bulk and wedding orders.
+          <div className="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 text-xs sm:text-sm text-indigo-900 leading-relaxed font-medium">
+            💡 Respond to catering inquiries promptly — quick replies convert
+            significantly better on bulk and wedding orders.
           </div>
         </div>
       </div>
 
       {/* Recent Orders & Inquiries */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Recent Orders */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/70 shadow-xs space-y-5">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Recent Orders</h2>
-              <p className="text-xs text-slate-400">Latest sales transactions</p>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                Recent Orders
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 font-medium">
+                Latest sales transactions
+              </p>
             </div>
             <Link
               to="/admin/orders"
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-0.5"
+              className="text-xs sm:text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
             >
-              View All <ArrowUpRight size={13} />
+              View All <ArrowUpRight size={16} />
             </Link>
           </div>
 
           <div className="overflow-x-auto -mx-1">
-            <table className="w-full text-left text-xs border-collapse min-w-[480px]">
+            <table className="w-full text-left text-sm border-collapse min-w-[500px]">
               <thead>
-                <tr className="border-b border-slate-100 text-slate-400 font-medium">
-                  <th className="py-2.5 px-1">Order ID</th>
-                  <th className="py-2.5 px-1">Customer</th>
-                  <th className="py-2.5 px-1">Amount</th>
-                  <th className="py-2.5 px-1 text-center">Status</th>
-                  <th className="py-2.5 px-1 text-right">Actions</th>
+                <tr className="border-b border-slate-100 text-slate-400 font-bold text-xs uppercase tracking-wider">
+                  <th className="py-3 px-2">Order ID</th>
+                  <th className="py-3 px-2">Customer</th>
+                  <th className="py-3 px-2">Amount</th>
+                  <th className="py-3 px-2 text-center">Status</th>
+                  <th className="py-3 px-2 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
-                {orders.slice(0, 4).map((order) => (
-                  <tr key={order._id} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="py-3 px-1 font-medium font-mono text-slate-700 truncate max-w-[100px]" title={order._id}>
+              <tbody className="divide-y divide-slate-100">
+                {orders.slice(0, 5).map((order) => (
+                  <tr
+                    key={order._id}
+                    className="hover:bg-slate-50/70 transition-colors"
+                  >
+                    <td
+                      className="py-3.5 px-2 font-bold font-mono text-slate-700 truncate max-w-[120px]"
+                      title={order._id}
+                    >
                       {order.orderNumber || order._id.substring(18)}
                     </td>
-                    <td className="py-3 px-1 text-slate-700">{order.customerName}</td>
-                    <td className="py-3 px-1 font-semibold text-slate-900">
+                    <td className="py-3.5 px-2 text-slate-800 font-semibold">
+                      {order.customerName}
+                    </td>
+                    <td className="py-3.5 px-2 font-black font-mono text-slate-900">
                       {currency(order.totalAmount)}
                     </td>
-                    <td className="py-3 px-1">
+                    <td className="py-3.5 px-2">
                       <div className="flex justify-center">
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold
-                          ${order.orderStatus === "Delivered" ? "bg-emerald-50 text-emerald-700" : ""}
-                          ${order.orderStatus === "Preparing" || order.orderStatus === "Confirmed" || order.orderStatus === "Out For Delivery" ? "bg-amber-50 text-amber-700" : ""}
-                          ${order.orderStatus === "Pending" ? "bg-rose-50 text-rose-700" : ""}
-                          ${order.orderStatus === "Cancelled" ? "bg-slate-100 text-slate-500" : ""}
+                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold
+                          ${
+                            order.orderStatus === "Delivered"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : ""
+                          }
+                          ${
+                            order.orderStatus === "Preparing" ||
+                            order.orderStatus === "Confirmed" ||
+                            order.orderStatus === "Out For Delivery"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : ""
+                          }
+                          ${
+                            order.orderStatus === "Pending"
+                              ? "bg-rose-50 text-rose-700 border border-rose-200"
+                              : ""
+                          }
+                          ${
+                            order.orderStatus === "Cancelled"
+                              ? "bg-slate-100 text-slate-600 border border-slate-200"
+                              : ""
+                          }
                         `}
                         >
-                          {order.orderStatus === "Delivered" && <CheckCircle2 size={10} />}
-                          {(order.orderStatus === "Preparing" || order.orderStatus === "Confirmed" || order.orderStatus === "Out For Delivery" || order.orderStatus === "Pending") && (
-                            <Clock size={10} />
+                          {order.orderStatus === "Delivered" && (
+                            <CheckCircle2 size={12} />
+                          )}
+                          {(order.orderStatus === "Preparing" ||
+                            order.orderStatus === "Confirmed" ||
+                            order.orderStatus === "Out For Delivery" ||
+                            order.orderStatus === "Pending") && (
+                            <Clock size={12} />
                           )}
                           {order.orderStatus}
                         </span>
                       </div>
                     </td>
-                    <td className="py-3 px-1 text-right">
-                      {order.orderStatus !== "Delivered" && order.orderStatus !== "Cancelled" ? (
+                    <td className="py-3.5 px-2 text-right">
+                      {order.orderStatus !== "Delivered" &&
+                      order.orderStatus !== "Cancelled" ? (
                         <button
-                          onClick={() => handleUpdateStatus(order._id, "Delivered")}
-                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md text-[10px] shadow-sm transition-colors"
+                          onClick={() =>
+                            handleUpdateStatus(order._id, "Delivered")
+                          }
+                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
                         >
                           Deliver
                         </button>
                       ) : (
-                        <span className="text-[10px] text-emerald-600 font-semibold">Processed</span>
+                        <span className="text-xs text-emerald-600 font-bold">
+                          Processed
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -353,59 +476,68 @@ const AdminDashboard = () => {
         </div>
 
         {/* Recent Inquiries */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/70 shadow-xs space-y-5">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Customer Inquiries</h2>
-              <p className="text-xs text-slate-400">Latest feedback and wedding bookings</p>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                Customer Inquiries
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-400 font-medium">
+                Latest feedback and catering requests
+              </p>
             </div>
             <Link
               to="/admin/inquiries"
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-0.5"
+              className="text-xs sm:text-sm font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
             >
-              View All <ArrowUpRight size={13} />
+              View All <ArrowUpRight size={16} />
             </Link>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             {inquiries
               .filter((i) => !i.isDeleted)
-              .slice(0, 3)
+              .slice(0, 4)
               .map((inquiry) => (
                 <div
                   key={inquiry._id}
-                  className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-3 justify-between"
+                  className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-start gap-3 justify-between"
                 >
-                  <div className="space-y-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-xs text-slate-900">{inquiry.name}</span>
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        {new Date(inquiry.createdAt).toLocaleDateString()}
+                  <div className="space-y-1.5 min-w-0">
+                    <div className="flex items-center gap-2.5">
+                      <span className="font-bold text-sm text-slate-900">
+                        {inquiry.name}
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">
+                        {new Date(inquiry.createdAt).toLocaleDateString(
+                          "en-IN"
+                        )}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-500 line-clamp-1 italic">
+                    <p className="text-xs sm:text-sm text-slate-600 line-clamp-1 italic">
                       "{inquiry.reason}"
                     </p>
-                    <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 truncate">
+                    <div className="flex items-center gap-2 text-xs font-mono text-slate-400 truncate">
                       <span className="truncate">{inquiry.email}</span>
                       <span>|</span>
                       <span>{inquiry.phone}</span>
                     </div>
                   </div>
                   <span
-                    className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0
-                    ${inquiry.status === "Pending"
-                        ? "bg-rose-50 text-rose-700 border border-rose-100"
-                        : "bg-emerald-50 text-emerald-700"
-                      }
-                  `}
+                    className={`inline-flex px-3 py-1 rounded-full text-xs font-bold shrink-0 ${
+                      inquiry.status === "Pending"
+                        ? "bg-rose-50 text-rose-700 border border-rose-200"
+                        : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    }`}
                   >
                     {inquiry.status}
                   </span>
                 </div>
               ))}
             {inquiries.filter((i) => !i.isDeleted).length === 0 && (
-              <p className="text-xs text-slate-400 text-center py-6">No inquiries yet.</p>
+              <p className="text-sm text-slate-400 text-center py-8">
+                No inquiries yet.
+              </p>
             )}
           </div>
         </div>
