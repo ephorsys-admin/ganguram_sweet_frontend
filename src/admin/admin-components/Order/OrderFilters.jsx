@@ -11,54 +11,54 @@ const OrderFilters = ({
   return (
     <div className="space-y-4">
       {/* Source Tabs */}
-      <div className="flex bg-[#FAF6F0]/60 p-1 rounded-2xl border border-[#E6CCB2]/20 w-fit gap-1">
+      <div className="flex bg-[#FAF6F0] p-1.5 rounded-2xl border border-[#E6CCB2]/30 w-full sm:w-fit gap-1.5 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveSource("Website")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer ${
+          className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm sm:text-base font-bold transition-all duration-300 cursor-pointer flex-1 sm:flex-none ${
             activeSource === "Website"
               ? "bg-[#3D271B] text-[#FAF6F0] shadow-md shadow-[#3D271B]/15"
-              : "text-[#6E5A4F] hover:text-[#3D271B] hover:bg-[#FAF6F0]"
+              : "text-[#6E5A4F] hover:text-[#3D271B] hover:bg-white/60"
           }`}
         >
-          <Globe size={14} className={activeSource === "Website" ? "text-[#DFA250]" : "text-[#a65827]"} />
-          Website Orders
+          <Globe size={18} className={activeSource === "Website" ? "text-[#DFA250]" : "text-[#a65827]"} />
+          <span>Website Orders</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveSource("Admin")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer ${
+          className={`flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm sm:text-base font-bold transition-all duration-300 cursor-pointer flex-1 sm:flex-none ${
             activeSource === "Admin"
               ? "bg-[#3D271B] text-[#FAF6F0] shadow-md shadow-[#3D271B]/15"
-              : "text-[#6E5A4F] hover:text-[#3D271B] hover:bg-[#FAF6F0]"
+              : "text-[#6E5A4F] hover:text-[#3D271B] hover:bg-white/60"
           }`}
         >
-          <UserCog size={14} className={activeSource === "Admin" ? "text-[#DFA250]" : "text-[#a65827]"} />
-          Admin Orders
+          <UserCog size={18} className={activeSource === "Admin" ? "text-[#DFA250]" : "text-[#a65827]"} />
+          <span>Admin Orders</span>
         </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-2xl border border-[#E6CCB2]/30 shadow-xs flex flex-col lg:flex-row gap-4 items-center">
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#E6CCB2]/30 shadow-xs flex flex-col lg:flex-row gap-4 items-center">
         {/* Search */}
         <div className="relative w-full lg:flex-1">
-          <Search className="absolute inset-y-0 left-3.5 my-auto text-[#6E5A4F]/50 h-4 w-4" />
+          <Search className="absolute inset-y-0 left-4 my-auto text-[#6E5A4F]/60 h-5 w-5" />
           <input
             type="text"
-            placeholder="Search by Order ID, Customer Name, or ID..."
+            placeholder="Search by Order ID, Customer Name, or Mobile..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="block w-full pl-10 pr-4 py-2.5 bg-[#FAF6F0]/40 border border-[#E6CCB2]/30 rounded-xl text-xs text-[#3D271B] placeholder-[#6E5A4F]/40 focus:outline-none focus:ring-2 focus:ring-[#a65827]/10"
+            className="block w-full pl-12 pr-4 py-3 bg-[#FAF6F0]/30 border border-[#E6CCB2]/40 rounded-2xl text-sm sm:text-base text-[#3D271B] placeholder-[#6E5A4F]/50 focus:outline-none focus:ring-2 focus:ring-[#a65827]/20 focus:border-[#a65827] font-semibold"
           />
         </div>
 
         {/* Filter Dropdown */}
-        <div className="flex items-center gap-2 w-full lg:w-auto shrink-0">
-          <Filter size={15} className="text-[#a65827]" />
+        <div className="flex items-center gap-2.5 w-full lg:w-auto shrink-0">
+          <Filter size={18} className="text-[#a65827] shrink-0" />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="block w-full lg:w-48 px-3 py-2.5 bg-[#FAF6F0]/40 border border-[#E6CCB2]/30 rounded-xl text-xs text-[#3D271B] font-semibold focus:outline-none"
+            className="block w-full lg:w-56 px-4 py-3 bg-[#FAF6F0]/40 border border-[#E6CCB2]/40 rounded-2xl text-sm sm:text-base text-[#3D271B] font-bold focus:outline-none focus:ring-2 focus:ring-[#a65827]/20 cursor-pointer"
           >
             <option value="All">All Statuses</option>
             <option value="Pending">Pending</option>

@@ -59,7 +59,7 @@ const AdminBilling = () => {
 
 
   return (
-    <div className="space-y-6 text-xs font-sans">
+    <div className="space-y-8 font-sans">
       {/* Header */}
       <BillingHeader onCreateClick={() => navigate("/admin/billing/create")} />
 
@@ -83,18 +83,18 @@ const AdminBilling = () => {
 
       {/* Bills View Area */}
       {isLoading && bills.length === 0 ? (
-        <div className="bg-white p-12 rounded-3xl border border-[#E6CCB2]/30 shadow-xs flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="h-10 w-10 text-[#DFA250] animate-spin" />
-          <span className="text-xs text-[#6E5A4F] font-semibold">Loading Invoices...</span>
+        <div className="bg-white p-12 rounded-3xl border border-[#E6CCB2]/30 shadow-xs flex flex-col items-center justify-center space-y-4 min-h-[300px]">
+          <Loader2 className="h-12 w-12 text-[#DFA250] animate-spin" />
+          <span className="text-sm md:text-base text-[#6E5A4F] font-semibold">Loading Invoices...</span>
         </div>
       ) : error ? (
-        <div className="bg-red-50/50 p-8 rounded-3xl border border-red-200 flex flex-col items-center justify-center text-center space-y-2">
-          <AlertTriangle className="h-10 w-10 text-red-600" />
-          <span className="text-sm font-bold text-red-800">Connection Failed</span>
-          <p className="text-xs text-red-650">Make sure your backend server is running and try again.</p>
+        <div className="bg-red-50/60 p-8 rounded-3xl border border-red-200 flex flex-col items-center justify-center text-center space-y-3">
+          <AlertTriangle className="h-12 w-12 text-red-600" />
+          <span className="text-base font-bold text-red-800">Connection Failed</span>
+          <p className="text-sm text-red-600">Make sure your backend server is running and try again.</p>
           <button 
             onClick={() => dispatch(getBills({ page, limit: 10, search, status: statusFilter === "All" ? undefined : statusFilter, billType: typeFilter === "All" ? undefined : typeFilter }))} 
-            className="mt-2 px-4 py-2 bg-red-650 text-white font-semibold text-xs rounded-lg shadow-md hover:bg-red-750 transition"
+            className="mt-2 px-6 py-2.5 bg-red-600 text-white font-bold text-sm rounded-xl shadow-md hover:bg-red-700 transition cursor-pointer"
           >
             Retry Connection
           </button>
