@@ -32,7 +32,59 @@ const SHOP = {
 // ============================================================
 
 const isAndroidDevice = () => {
-  return /Android/i.test(navigator.userAgent);
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  const userAgent = navigator.userAgent || "";
+  const platform = navigator.platform || "";
+
+  // ----------------------------------------------------------
+  // Normal Android Mobile / Tablet
+  // ----------------------------------------------------------
+
+  if (/Android/i.test(userAgent)) {
+    return true;
+  }
+
+  // ----------------------------------------------------------
+  // Android Tablet with Chrome "Desktop Site"
+  //
+  // When Desktop Site is enabled, Android may hide
+  // "Android" from the User-Agent.
+  // ----------------------------------------------------------
+
+  const maxTouchPoints =
+    navigator.maxTouchPoints || 0;
+
+  const isTouchDevice =
+    maxTouchPoints >= 2;
+
+  const isLinuxDevice =
+    /Linux/i.test(platform) ||
+    /Linux/i.test(userAgent);
+
+  const screenWidth =
+    window.screen?.width || window.innerWidth || 0;
+
+  const screenHeight =
+    window.screen?.height || window.innerHeight || 0;
+
+  const largerScreen =
+    Math.max(
+      screenWidth,
+      screenHeight
+    ) <= 1800;
+
+  if (
+    isTouchDevice &&
+    isLinuxDevice &&
+    largerScreen
+  ) {
+    return true;
+  }
+
+  return false;
 };
 
 // ============================================================
@@ -68,39 +120,85 @@ const cleanText = (value = "") => {
     .replace(/[^\x00-\x7F]/g, "");
 };
 
-const padRight = (text = "", length = 32) => {
+const padRight = (
+  text = "",
+  length = 32
+) => {
   text = cleanText(text);
 
   if (text.length > length) {
     return text.substring(0, length);
   }
 
-  return text + " ".repeat(length - text.length);
+  return (
+    text +
+    " ".repeat(
+      length - text.length
+    )
+  );
 };
 
-const padLeft = (text = "", length = 32) => {
+const padLeft = (
+  text = "",
+  length = 32
+) => {
   text = cleanText(text);
 
   if (text.length > length) {
-    return text.substring(0, length);
+    return text.substring(
+      text.length - length
+    );
   }
 
-  return " ".repeat(length - text.length) + text;
+  return (
+    " ".repeat(
+      length - text.length
+    ) + text
+  );
 };
 
-const twoColumn = (left, right, width = 32) => {
+const twoColumn = (
+  left,
+  right,
+  width = 32
+) => {
   left = cleanText(left);
   right = cleanText(right);
 
-  const available = width - right.length;
+  const available =
+    width - right.length;
 
-  if (left.length > available) {
-    left = left.substring(0, Math.max(0, available - 1)) + ".";
+  if (available <= 1) {
+    return (
+      right.substring(
+        0,
+        width
+      )
+    );
+  }
+
+  if (
+    left.length >
+    available - 1
+  ) {
+    left =
+      left.substring(
+        0,
+        Math.max(
+          0,
+          available - 1
+        )
+      ) + ".";
   }
 
   return (
     left +
-    " ".repeat(Math.max(1, available - left.length)) +
+    " ".repeat(
+      Math.max(
+        1,
+        available - left.length
+      )
+    ) +
     right
   );
 };
@@ -109,8 +207,11 @@ const twoColumn = (left, right, width = 32) => {
 // PRICE FORMAT
 // ============================================================
 
-const formatAmount = (amount) => {
-  const number = Number(amount || 0);
+const formatAmount = (
+  amount
+) => {
+  const number =
+    Number(amount || 0);
 
   return number.toFixed(2);
 };
@@ -119,7 +220,9 @@ const formatAmount = (amount) => {
 // RAWBT RECEIPT GENERATOR
 // ============================================================
 
-const buildRawBTReceipt = (bill) => {
+const buildRawBTReceipt = (
+  bill
+) => {
   const WIDTH = 32;
 
   let receipt = "";
@@ -134,217 +237,317 @@ const buildRawBTReceipt = (bill) => {
   // SHOP HEADER
   // ----------------------------------------------------------
 
-  receipt += ESC_POS.ALIGN_CENTER;
+  receipt +=
+    ESC_POS.ALIGN_CENTER;
 
-  receipt += ESC_POS.BOLD_ON;
-  receipt += ESC_POS.DOUBLE_ON;
+  receipt +=
+    ESC_POS.BOLD_ON;
 
-  receipt += `${cleanText(SHOP.name)}\n`;
+  receipt +=
+    ESC_POS.DOUBLE_ON;
 
-  receipt += ESC_POS.NORMAL;
-  receipt += ESC_POS.BOLD_ON;
+  receipt +=
+    `${cleanText(
+      SHOP.name
+    )}\n`;
 
-  receipt += `${cleanText(SHOP.subName)}\n`;
+  receipt +=
+    ESC_POS.NORMAL;
 
-  receipt += ESC_POS.BOLD_OFF;
+  receipt +=
+    ESC_POS.BOLD_ON;
 
-  receipt += `${cleanText(SHOP.tagline)}\n`;
-  receipt += `${cleanText(SHOP.phone)}\n`;
+  receipt +=
+    `${cleanText(
+      SHOP.subName
+    )}\n`;
+
+  receipt +=
+    ESC_POS.BOLD_OFF;
+
+  receipt +=
+    `${cleanText(
+      SHOP.tagline
+    )}\n`;
+
+  receipt +=
+    `${cleanText(
+      SHOP.phone
+    )}\n`;
 
   receipt += "\n";
 
   // ----------------------------------------------------------
-  // TAX INVOICE
+  // TITLE
   // ----------------------------------------------------------
 
-  receipt += ESC_POS.ALIGN_CENTER;
-  receipt += ESC_POS.BOLD_ON;
+  receipt +=
+    ESC_POS.ALIGN_CENTER;
 
-  receipt += "TAX INVOICE\n";
+  receipt +=
+    ESC_POS.BOLD_ON;
 
-  receipt += ESC_POS.BOLD_OFF;
+  receipt +=
+    "TAX INVOICE\n";
 
-  receipt += "-".repeat(WIDTH) + "\n";
+  receipt +=
+    ESC_POS.BOLD_OFF;
+
+  receipt +=
+    "-".repeat(WIDTH) +
+    "\n";
 
   // ----------------------------------------------------------
   // BILL INFORMATION
   // ----------------------------------------------------------
 
-  receipt += ESC_POS.ALIGN_LEFT;
+  receipt +=
+    ESC_POS.ALIGN_LEFT;
 
-  receipt += twoColumn(
-    "Invoice",
-    bill.invoiceNumber || bill._id || "-",
-    WIDTH
-  );
-
-  receipt += "\n";
-
-  const createdDate = bill.createdAt
-    ? new Date(bill.createdAt)
-    : new Date();
-
-  receipt += twoColumn(
-    "Date",
-    createdDate.toLocaleDateString("en-IN"),
-    WIDTH
-  );
+  receipt +=
+    twoColumn(
+      "Invoice",
+      bill.invoiceNumber ||
+        bill._id ||
+        "-",
+      WIDTH
+    );
 
   receipt += "\n";
 
-  receipt += twoColumn(
-    "Time",
-    createdDate.toLocaleTimeString("en-IN"),
-    WIDTH
-  );
+  receipt +=
+    twoColumn(
+      "Date",
+      bill.createdAt
+        ? new Date(
+            bill.createdAt
+          ).toLocaleDateString(
+            "en-IN"
+          )
+        : new Date().toLocaleDateString(
+            "en-IN"
+          ),
+      WIDTH
+    );
 
   receipt += "\n";
 
-  receipt += "-".repeat(WIDTH) + "\n";
+  receipt +=
+    twoColumn(
+      "Time",
+      bill.createdAt
+        ? new Date(
+            bill.createdAt
+          ).toLocaleTimeString(
+            "en-IN"
+          )
+        : new Date().toLocaleTimeString(
+            "en-IN"
+          ),
+      WIDTH
+    );
+
+  receipt += "\n";
+
+  receipt +=
+    "-".repeat(WIDTH) +
+    "\n";
 
   // ----------------------------------------------------------
   // CUSTOMER
   // ----------------------------------------------------------
 
-  receipt += ESC_POS.BOLD_ON;
-  receipt += "CUSTOMER\n";
-  receipt += ESC_POS.BOLD_OFF;
+  receipt +=
+    ESC_POS.BOLD_ON;
 
-  receipt += `Name : ${cleanText(
-    bill.customerName || "-"
-  )}\n`;
+  receipt +=
+    "CUSTOMER\n";
+
+  receipt +=
+    ESC_POS.BOLD_OFF;
+
+  receipt +=
+    `Name : ${cleanText(
+      bill.customerName ||
+        "-"
+    )}\n`;
 
   if (bill.mobile) {
-    receipt += `Mobile: ${cleanText(
-      bill.mobile
-    )}\n`;
+    receipt +=
+      `Mobile: ${cleanText(
+        bill.mobile
+      )}\n`;
   }
 
-  receipt += "-".repeat(WIDTH) + "\n";
+  receipt +=
+    "-".repeat(WIDTH) +
+    "\n";
+
+  // ----------------------------------------------------------
+  // ITEMS HEADER
+  // ----------------------------------------------------------
+
+  receipt +=
+    ESC_POS.BOLD_ON;
+
+  receipt +=
+    "ITEM\n";
+
+  receipt +=
+    ESC_POS.BOLD_OFF;
+
+  receipt +=
+    "-".repeat(WIDTH) +
+    "\n";
 
   // ----------------------------------------------------------
   // ITEMS
   // ----------------------------------------------------------
 
-  receipt += ESC_POS.BOLD_ON;
-  receipt += "ITEM\n";
-  receipt += ESC_POS.BOLD_OFF;
+  const items =
+    Array.isArray(bill.items)
+      ? bill.items
+      : [];
 
-  receipt += "-".repeat(WIDTH) + "\n";
+  items.forEach(
+    (item) => {
+      const productName =
+        cleanText(
+          item.productName ||
+            item.name ||
+            "Item"
+        );
 
-  const items = Array.isArray(bill.items)
-    ? bill.items
-    : [];
+      const quantity =
+        Number(
+          item.quantity ||
+            item.qty ||
+            1
+        );
 
-  items.forEach((item) => {
-    const productName = cleanText(
-      item.productName ||
-        item.name ||
-        "Item"
-    );
+      const price =
+        Number(
+          item.price ||
+            item.unitPrice ||
+            0
+        );
 
-    const quantity = Number(
-      item.quantity ||
-        item.qty ||
-        1
-    );
+      const total =
+        Number(
+          item.total ??
+            quantity * price
+        );
 
-    const price = Number(
-      item.price ||
-        item.unitPrice ||
-        0
-    );
+      // Product name
+      receipt +=
+        `${productName}\n`;
 
-    const total = Number(
-      item.total ||
-        quantity * price
-    );
+      // Qty x Price + Total
+      receipt +=
+        twoColumn(
+          `${quantity} x ${formatAmount(
+            price
+          )}`,
+          formatAmount(total),
+          WIDTH
+        );
 
-    // Product name
-    receipt += `${productName}\n`;
+      receipt += "\n";
+    }
+  );
 
-    // Qty x price + total
-    receipt += twoColumn(
-      `${quantity} x ${formatAmount(
-        price
-      )}`,
-      formatAmount(total),
-      WIDTH
-    );
-
-    receipt += "\n";
-  });
-
-  receipt += "-".repeat(WIDTH) + "\n";
+  receipt +=
+    "-".repeat(WIDTH) +
+    "\n";
 
   // ----------------------------------------------------------
   // TOTALS
   // ----------------------------------------------------------
 
-  const subtotal = Number(
-    bill.subTotal ??
-      bill.subtotal ??
-      bill.totalAmount ??
-      0
-  );
+  const subtotal =
+    Number(
+      bill.subTotal ??
+        bill.subtotal ??
+        bill.totalAmount ??
+        0
+    );
 
-  const discount = Number(
-    bill.discountAmount || 0
-  );
+  const discount =
+    Number(
+      bill.discountAmount ||
+        0
+    );
 
-  const grandTotal = Number(
-    bill.finalAmount ??
-      bill.grandTotal ??
-      subtotal - discount
-  );
+  const grandTotal =
+    Number(
+      bill.finalAmount ??
+        bill.grandTotal ??
+        subtotal - discount
+    );
 
-  receipt += twoColumn(
-    "Subtotal",
-    `Rs.${formatAmount(subtotal)}`,
-    WIDTH
-  );
+  receipt +=
+    twoColumn(
+      "Subtotal",
+      `Rs.${formatAmount(
+        subtotal
+      )}`,
+      WIDTH
+    );
 
   receipt += "\n";
 
   if (discount > 0) {
-    receipt += twoColumn(
-      "Discount",
-      `-Rs.${formatAmount(discount)}`,
-      WIDTH
-    );
+    receipt +=
+      twoColumn(
+        "Discount",
+        `-Rs.${formatAmount(
+          discount
+        )}`,
+        WIDTH
+      );
 
     receipt += "\n";
   }
 
-  receipt += "-".repeat(WIDTH) + "\n";
+  receipt +=
+    "-".repeat(WIDTH) +
+    "\n";
 
-  receipt += ESC_POS.BOLD_ON;
+  receipt +=
+    ESC_POS.BOLD_ON;
 
-  receipt += twoColumn(
-    "GRAND TOTAL",
-    `Rs.${formatAmount(grandTotal)}`,
-    WIDTH
-  );
+  receipt +=
+    twoColumn(
+      "GRAND TOTAL",
+      `Rs.${formatAmount(
+        grandTotal
+      )}`,
+      WIDTH
+    );
 
   receipt += "\n";
 
-  receipt += ESC_POS.BOLD_OFF;
+  receipt +=
+    ESC_POS.BOLD_OFF;
 
   // ----------------------------------------------------------
   // PAYMENT
   // ----------------------------------------------------------
 
-  receipt += "-".repeat(WIDTH) + "\n";
+  receipt +=
+    "-".repeat(WIDTH) +
+    "\n";
 
-  receipt += twoColumn(
-    "Payment",
-    cleanText(
-      bill.paymentMode ||
-        bill.paymentMethod ||
-        "Cash"
-    ),
-    WIDTH
-  );
+  receipt +=
+    twoColumn(
+      "Payment",
+      cleanText(
+        bill.paymentMode ||
+          bill.paymentMethod ||
+          "Cash"
+      ),
+      WIDTH
+    );
 
   receipt += "\n";
 
@@ -354,10 +557,14 @@ const buildRawBTReceipt = (bill) => {
 
   receipt += "\n";
 
-  receipt += ESC_POS.ALIGN_CENTER;
+  receipt +=
+    ESC_POS.ALIGN_CENTER;
 
-  receipt += "Thank You!\n";
-  receipt += "Visit Again\n";
+  receipt +=
+    "Thank You!\n";
+
+  receipt +=
+    "Visit Again\n";
 
   receipt += "\n";
   receipt += "\n";
@@ -367,45 +574,40 @@ const buildRawBTReceipt = (bill) => {
   // CUT
   // ----------------------------------------------------------
 
-  receipt += ESC_POS.CUT;
+  receipt +=
+    ESC_POS.CUT;
 
   return receipt;
 };
 
 // ============================================================
-// RAWBT BASE64 HELPER
+// RAWBT BASE64
 // ============================================================
 
-const textToBase64 = (text) => {
-  const bytes = new TextEncoder().encode(text);
-
-  let binary = "";
-
-  const chunkSize = 0x8000;
-
-  for (
-    let i = 0;
-    i < bytes.length;
-    i += chunkSize
-  ) {
-    const chunk = bytes.subarray(
-      i,
-      i + chunkSize
+const stringToBase64 = (
+  value
+) => {
+  try {
+    return btoa(value);
+  } catch (error) {
+    console.error(
+      "Base64 conversion error:",
+      error
     );
 
-    binary += String.fromCharCode(
-      ...chunk
+    throw new Error(
+      "RawBT data encoding failed."
     );
   }
-
-  return btoa(binary);
 };
 
 // ============================================================
 // RAWBT PRINT
 // ============================================================
 
-const printWithRawBT = async (bill) => {
+const printWithRawBT = async (
+  bill
+) => {
   try {
     if (!isAndroidDevice()) {
       throw new Error(
@@ -420,7 +622,9 @@ const printWithRawBT = async (bill) => {
     }
 
     const rawData =
-      buildRawBTReceipt(bill);
+      buildRawBTReceipt(
+        bill
+      );
 
     if (!rawData) {
       throw new Error(
@@ -428,19 +632,25 @@ const printWithRawBT = async (bill) => {
       );
     }
 
+    // --------------------------------------------------------
     // Convert ESC/POS data to Base64
+    // --------------------------------------------------------
+
     const base64Data =
-      textToBase64(rawData);
-
-    if (!base64Data) {
-      throw new Error(
-        "Base64 receipt data could not be generated."
+      stringToBase64(
+        rawData
       );
-    }
 
-    // RawBT supported URI
+    // --------------------------------------------------------
+    // RawBT URI
+    // --------------------------------------------------------
+
     const rawbtUrl =
       `rawbt:base64,${base64Data}`;
+
+    console.log(
+      "================================="
+    );
 
     console.log(
       "RawBT print request started"
@@ -453,16 +663,25 @@ const printWithRawBT = async (bill) => {
     );
 
     console.log(
-      "RawBT URL length:",
-      rawbtUrl.length
+      "Android:",
+      isAndroidDevice()
     );
 
+    console.log(
+      "================================="
+    );
+
+    // --------------------------------------------------------
     // Open RawBT
+    // --------------------------------------------------------
+
     window.location.href =
       rawbtUrl;
 
     return true;
+
   } catch (error) {
+
     console.error(
       "RawBT print error:",
       error
@@ -484,45 +703,70 @@ export default function BillingTable({
   search,
   statusFilter,
 }) {
+
   // ==========================================================
   // STATE
   // ==========================================================
 
-  const [downloadingId, setDownloadingId] =
-    useState(null);
+  const [
+    downloadingId,
+    setDownloadingId,
+  ] = useState(null);
 
-  const [showPrinterModal, setShowPrinterModal] =
-    useState(false);
+  const [
+    showPrinterModal,
+    setShowPrinterModal,
+  ] = useState(false);
 
-  const [printers, setPrinters] =
-    useState([]);
+  const [
+    printers,
+    setPrinters,
+  ] = useState([]);
 
-  const [selectedPrinter, setSelectedPrinter] =
-    useState("");
+  const [
+    selectedPrinter,
+    setSelectedPrinter,
+  ] = useState("");
 
-  const [connectedPrinter, setConnectedPrinter] =
-    useState("");
+  const [
+    connectedPrinter,
+    setConnectedPrinter,
+  ] = useState("");
 
-  const [qzConnected, setQzConnected] =
-    useState(false);
+  const [
+    qzConnected,
+    setQzConnected,
+  ] = useState(false);
 
-  const [printerLoading, setPrinterLoading] =
-    useState(false);
+  const [
+    printerLoading,
+    setPrinterLoading,
+  ] = useState(false);
 
-  const [printerConnecting, setPrinterConnecting] =
-    useState(false);
+  const [
+    printerConnecting,
+    setPrinterConnecting,
+  ] = useState(false);
 
-  const [printingId, setPrintingId] =
-    useState(null);
+  const [
+    printingId,
+    setPrintingId,
+  ] = useState(null);
 
-  const [testPrinting, setTestPrinting] =
-    useState(false);
+  const [
+    testPrinting,
+    setTestPrinting,
+  ] = useState(false);
 
-  const [printerError, setPrinterError] =
-    useState("");
+  const [
+    printerError,
+    setPrinterError,
+  ] = useState("");
 
-  const [toast, setToast] =
-    useState(null);
+  const [
+    toast,
+    setToast,
+  ] = useState(null);
 
   const isConnectingRef =
     useRef(false);
@@ -559,7 +803,9 @@ export default function BillingTable({
   // PRICE
   // ==========================================================
 
-  const displayPrice = (amount) => {
+  const displayPrice = (
+    amount
+  ) => {
     return `₹${Number(
       amount || 0
     ).toFixed(2)}`;
@@ -572,9 +818,10 @@ export default function BillingTable({
   const getStatusStyle = (
     status
   ) => {
-    const value = String(
-      status || ""
-    ).toLowerCase();
+    const value =
+      String(
+        status || ""
+      ).toLowerCase();
 
     if (
       value === "paid" ||
@@ -582,15 +829,21 @@ export default function BillingTable({
       value === "completed"
     ) {
       return {
-        background: "#dcfce7",
-        color: "#166534",
+        background:
+          "#dcfce7",
+        color:
+          "#166534",
       };
     }
 
-    if (value === "pending") {
+    if (
+      value === "pending"
+    ) {
       return {
-        background: "#fef3c7",
-        color: "#92400e",
+        background:
+          "#fef3c7",
+        color:
+          "#92400e",
       };
     }
 
@@ -599,14 +852,18 @@ export default function BillingTable({
       value === "failed"
     ) {
       return {
-        background: "#fee2e2",
-        color: "#991b1b",
+        background:
+          "#fee2e2",
+        color:
+          "#991b1b",
       };
     }
 
     return {
-      background: "#f3f4f6",
-      color: "#374151",
+      background:
+        "#f3f4f6",
+      color:
+        "#374151",
     };
   };
 
@@ -631,6 +888,7 @@ export default function BillingTable({
 
   const connectQZTray =
     async () => {
+
       if (isAndroid) {
         console.log(
           "Android detected - QZ Tray not required."
@@ -642,7 +900,9 @@ export default function BillingTable({
       if (
         qz.websocket.isActive()
       ) {
-        setQzConnected(true);
+        setQzConnected(
+          true
+        );
 
         return true;
       }
@@ -658,38 +918,51 @@ export default function BillingTable({
 
       connectPromiseRef.current =
         (async () => {
+
           try {
-            setPrinterError("");
+
+            setPrinterError(
+              ""
+            );
 
             await qz.websocket.connect();
 
-            setQzConnected(true);
+            setQzConnected(
+              true
+            );
 
             console.log(
               "QZ connected"
             );
 
             return true;
+
           } catch (error) {
+
             console.error(
               "QZ connection error:",
               error
             );
 
-            setQzConnected(false);
+            setQzConnected(
+              false
+            );
 
             setPrinterError(
               "QZ Tray connect nahi hua. Please QZ Tray install/open karein."
             );
 
             return false;
+
           } finally {
+
             isConnectingRef.current =
               false;
 
             connectPromiseRef.current =
               null;
           }
+
         })();
 
       return connectPromiseRef.current;
@@ -700,17 +973,50 @@ export default function BillingTable({
   // ==========================================================
 
   useEffect(() => {
+
+    // --------------------------------------------------------
+    // Android
+    // --------------------------------------------------------
+
     if (isAndroid) {
+
       console.log(
-        "Android device detected."
+        "================================="
       );
 
       console.log(
-        "RawBT mode enabled."
+        "ANDROID DEVICE DETECTED"
+      );
+
+      console.log(
+        "RawBT mode enabled"
+      );
+
+      console.log(
+        "User Agent:",
+        navigator.userAgent
+      );
+
+      console.log(
+        "Platform:",
+        navigator.platform
+      );
+
+      console.log(
+        "Touch Points:",
+        navigator.maxTouchPoints
+      );
+
+      console.log(
+        "================================="
       );
 
       return;
     }
+
+    // --------------------------------------------------------
+    // Desktop
+    // --------------------------------------------------------
 
     connectQZTray();
 
@@ -723,11 +1029,8 @@ export default function BillingTable({
       setSelectedPrinter(
         savedPrinter
       );
-
-      setConnectedPrinter(
-        savedPrinter
-      );
     }
+
   }, []);
 
   // ==========================================================
@@ -736,13 +1039,20 @@ export default function BillingTable({
 
   const searchPrinters =
     async () => {
+
       if (isAndroid) {
         return [];
       }
 
       try {
-        setPrinterLoading(true);
-        setPrinterError("");
+
+        setPrinterLoading(
+          true
+        );
+
+        setPrinterError(
+          ""
+        );
 
         const connected =
           await connectQZTray();
@@ -763,8 +1073,12 @@ export default function BillingTable({
           printerList || []
         );
 
-        return printerList || [];
+        return (
+          printerList || []
+        );
+
       } catch (error) {
+
         console.error(
           "Printer search error:",
           error
@@ -776,8 +1090,12 @@ export default function BillingTable({
         );
 
         return [];
+
       } finally {
-        setPrinterLoading(false);
+
+        setPrinterLoading(
+          false
+        );
       }
     };
 
@@ -787,7 +1105,9 @@ export default function BillingTable({
 
   const openPrinterModal =
     async () => {
+
       if (isAndroid) {
+
         showToast(
           "Android par RawBT + USB OTG use hoga.",
           "success"
@@ -796,7 +1116,9 @@ export default function BillingTable({
         return;
       }
 
-      setShowPrinterModal(true);
+      setShowPrinterModal(
+        true
+      );
 
       await searchPrinters();
     };
@@ -806,17 +1128,23 @@ export default function BillingTable({
   // ==========================================================
 
   const handleConnectPrinter =
-    async (printerName) => {
+    async (
+      printerName
+    ) => {
+
       if (!printerName) {
         return;
       }
 
       try {
+
         setPrinterConnecting(
           true
         );
 
-        setPrinterError("");
+        setPrinterError(
+          ""
+        );
 
         const connected =
           await connectQZTray();
@@ -833,6 +1161,7 @@ export default function BillingTable({
           );
 
         if (!printerExists) {
+
           const available =
             await qz.printers.find();
 
@@ -867,7 +1196,9 @@ export default function BillingTable({
         setShowPrinterModal(
           false
         );
+
       } catch (error) {
+
         console.error(
           "Printer connection error:",
           error
@@ -882,7 +1213,9 @@ export default function BillingTable({
           "Printer connect nahi hua.",
           "error"
         );
+
       } finally {
+
         setPrinterConnecting(
           false
         );
@@ -895,20 +1228,31 @@ export default function BillingTable({
 
   const disconnectQZ =
     async () => {
+
       try {
+
         if (
           qz.websocket.isActive()
         ) {
           await qz.websocket.disconnect();
         }
+
       } catch (error) {
+
         console.error(
           "QZ disconnect error:",
           error
         );
+
       } finally {
-        setQzConnected(false);
-        setConnectedPrinter("");
+
+        setQzConnected(
+          false
+        );
+
+        setConnectedPrinter(
+          ""
+        );
 
         showToast(
           "Printer disconnected."
@@ -921,8 +1265,12 @@ export default function BillingTable({
   // ==========================================================
 
   const handleDownloadPdf =
-    async (bill) => {
+    async (
+      bill
+    ) => {
+
       if (!bill?.invoiceUrl) {
+
         showToast(
           "Invoice PDF URL available nahi hai.",
           "error"
@@ -932,6 +1280,7 @@ export default function BillingTable({
       }
 
       try {
+
         setDownloadingId(
           bill._id
         );
@@ -960,7 +1309,8 @@ export default function BillingTable({
             "a"
           );
 
-        link.href = url;
+        link.href =
+          url;
 
         link.download =
           sanitizeFileName(
@@ -985,7 +1335,9 @@ export default function BillingTable({
         showToast(
           "Invoice downloaded successfully."
         );
+
       } catch (error) {
+
         console.error(
           "Download error:",
           error
@@ -995,8 +1347,12 @@ export default function BillingTable({
           "Invoice download failed.",
           "error"
         );
+
       } finally {
-        setDownloadingId(null);
+
+        setDownloadingId(
+          null
+        );
       }
     };
 
@@ -1005,9 +1361,14 @@ export default function BillingTable({
   // ==========================================================
 
   const fetchPdfAsBase64 =
-    async (pdfUrl) => {
+    async (
+      pdfUrl
+    ) => {
+
       const response =
-        await fetch(pdfUrl);
+        await fetch(
+          pdfUrl
+        );
 
       if (!response.ok) {
         throw new Error(
@@ -1026,7 +1387,8 @@ export default function BillingTable({
           arrayBuffer
         );
 
-      let binary = "";
+      let binary =
+        "";
 
       const chunkSize =
         0x8000;
@@ -1036,6 +1398,7 @@ export default function BillingTable({
         i < bytes.length;
         i += chunkSize
       ) {
+
         const chunk =
           bytes.subarray(
             i,
@@ -1048,7 +1411,9 @@ export default function BillingTable({
           );
       }
 
-      return btoa(binary);
+      return btoa(
+        binary
+      );
     };
 
   // ==========================================================
@@ -1056,12 +1421,16 @@ export default function BillingTable({
   // ==========================================================
 
   const handleDirectPrint =
-    async (bill) => {
+    async (
+      bill
+    ) => {
+
       if (isAndroid) {
         return;
       }
 
       if (!bill?.invoiceUrl) {
+
         showToast(
           "Invoice PDF available nahi hai.",
           "error"
@@ -1071,11 +1440,14 @@ export default function BillingTable({
       }
 
       try {
+
         setPrintingId(
           bill._id
         );
 
-        setPrinterError("");
+        setPrinterError(
+          ""
+        );
 
         const connected =
           await connectQZTray();
@@ -1091,17 +1463,20 @@ export default function BillingTable({
           selectedPrinter;
 
         if (!printerName) {
+
           const saved =
             localStorage.getItem(
               "ganguram_selected_printer"
             );
 
           if (saved) {
-            printerName = saved;
+            printerName =
+              saved;
           }
         }
 
         if (!printerName) {
+
           setShowPrinterModal(
             true
           );
@@ -1116,10 +1491,18 @@ export default function BillingTable({
           return;
         }
 
+        // ----------------------------------------------------
+        // Fetch PDF
+        // ----------------------------------------------------
+
         const pdfBase64 =
           await fetchPdfAsBase64(
             bill.invoiceUrl
           );
+
+        // ----------------------------------------------------
+        // QZ Configuration
+        // ----------------------------------------------------
 
         const config =
           qz.configs.create(
@@ -1128,6 +1511,10 @@ export default function BillingTable({
               copies: 1,
             }
           );
+
+        // ----------------------------------------------------
+        // PDF Print
+        // ----------------------------------------------------
 
         const printData = [
           {
@@ -1150,7 +1537,9 @@ export default function BillingTable({
         showToast(
           `Invoice sent to ${printerName}`
         );
+
       } catch (error) {
+
         console.error(
           "QZ print error:",
           error
@@ -1161,8 +1550,12 @@ export default function BillingTable({
             "Printing failed.",
           "error"
         );
+
       } finally {
-        setPrintingId(null);
+
+        setPrintingId(
+          null
+        );
       }
     };
 
@@ -1171,8 +1564,12 @@ export default function BillingTable({
   // ==========================================================
 
   const handleRawBTPrint =
-    async (bill) => {
+    async (
+      bill
+    ) => {
+
       try {
+
         setPrintingId(
           bill._id
         );
@@ -1184,7 +1581,9 @@ export default function BillingTable({
         showToast(
           "RawBT open ho raha hai..."
         );
+
       } catch (error) {
+
         console.error(
           "RawBT error:",
           error
@@ -1194,9 +1593,13 @@ export default function BillingTable({
           "RawBT printing start nahi hua.",
           "error"
         );
+
       } finally {
+
         setTimeout(() => {
-          setPrintingId(null);
+          setPrintingId(
+            null
+          );
         }, 1000);
       }
     };
@@ -1206,8 +1609,12 @@ export default function BillingTable({
   // ==========================================================
 
   const handlePrint =
-    async (bill) => {
+    async (
+      bill
+    ) => {
+
       if (isAndroid) {
+
         await handleRawBTPrint(
           bill
         );
@@ -1226,12 +1633,16 @@ export default function BillingTable({
 
   const handleQZTestPrint =
     async () => {
+
       if (isAndroid) {
         return;
       }
 
       try {
-        setTestPrinting(true);
+
+        setTestPrinting(
+          true
+        );
 
         const connected =
           await connectQZTray();
@@ -1247,6 +1658,7 @@ export default function BillingTable({
           selectedPrinter;
 
         if (!printerName) {
+
           setShowPrinterModal(
             true
           );
@@ -1279,7 +1691,9 @@ export default function BillingTable({
           ESC_POS.NORMAL,
 
           ESC_POS.BOLD_ON,
+
           `${SHOP.subName}\n`,
+
           ESC_POS.BOLD_OFF,
 
           `${SHOP.phone}\n`,
@@ -1287,7 +1701,9 @@ export default function BillingTable({
           "\n",
 
           ESC_POS.BOLD_ON,
+
           "TEST PRINT\n",
+
           ESC_POS.BOLD_OFF,
 
           "\n",
@@ -1307,7 +1723,9 @@ export default function BillingTable({
         showToast(
           "Test print sent successfully."
         );
+
       } catch (error) {
+
         console.error(
           "Test print error:",
           error
@@ -1318,19 +1736,27 @@ export default function BillingTable({
             "Test print failed.",
           "error"
         );
+
       } finally {
-        setTestPrinting(false);
+
+        setTestPrinting(
+          false
+        );
       }
     };
 
   // ==========================================================
-  // ANDROID RAWBT TEST
+  // ANDROID RAWBT TEST PRINT
   // ==========================================================
 
   const handleRawBTTestPrint =
     async () => {
+
       try {
-        setTestPrinting(true);
+
+        setTestPrinting(
+          true
+        );
 
         const testBill = {
           _id: "TEST",
@@ -1377,7 +1803,9 @@ export default function BillingTable({
         showToast(
           "RawBT test print start ho gaya."
         );
+
       } catch (error) {
+
         console.error(
           "RawBT test error:",
           error
@@ -1387,9 +1815,13 @@ export default function BillingTable({
           "RawBT test print failed.",
           "error"
         );
+
       } finally {
+
         setTimeout(() => {
-          setTestPrinting(false);
+          setTestPrinting(
+            false
+          );
         }, 1000);
       }
     };
@@ -1402,6 +1834,7 @@ export default function BillingTable({
     !bills ||
     bills.length === 0
   ) {
+
     return (
       <div
         style={{
@@ -1441,7 +1874,10 @@ export default function BillingTable({
         width: "100%",
       }}
     >
-      {/* TOAST */}
+
+      {/* ====================================================
+          TOAST
+      ===================================================== */}
 
       {toast && (
         <div
@@ -1454,8 +1890,7 @@ export default function BillingTable({
               "12px 18px",
             borderRadius: "8px",
             background:
-              toast.type ===
-              "error"
+              toast.type === "error"
                 ? "#dc2626"
                 : "#16a34a",
             color: "#fff",
@@ -1469,9 +1904,9 @@ export default function BillingTable({
         </div>
       )}
 
-      {/* =====================================================
+      {/* ====================================================
           PRINTER BAR
-      ====================================================== */}
+      ===================================================== */}
 
       <div
         style={{
@@ -1491,9 +1926,13 @@ export default function BillingTable({
           flexWrap: "wrap",
         }}
       >
-        {/* ANDROID */}
+
+        {/* ==================================================
+            ANDROID
+        ================================================== */}
 
         {isAndroid ? (
+
           <>
             <div
               style={{
@@ -1504,6 +1943,7 @@ export default function BillingTable({
                 gap: "10px",
               }}
             >
+
               <div
                 style={{
                   width: "38px",
@@ -1527,9 +1967,11 @@ export default function BillingTable({
               </div>
 
               <div>
+
                 <div
                   style={{
-                    fontWeight: 600,
+                    fontWeight:
+                      600,
                     fontSize:
                       "14px",
                   }}
@@ -1545,10 +1987,13 @@ export default function BillingTable({
                       "#6b7280",
                   }}
                 >
-                  Android → USB OTG
-                  → RP3230ABW
+                  Android →
+                  USB OTG →
+                  RP3230ABW
                 </div>
+
               </div>
+
             </div>
 
             <button
@@ -1579,6 +2024,7 @@ export default function BillingTable({
                 gap: "7px",
               }}
             >
+
               <Printer
                 size={16}
               />
@@ -1586,12 +2032,17 @@ export default function BillingTable({
               {testPrinting
                 ? "Printing..."
                 : "Test Print"}
+
             </button>
           </>
-        ) : (
-          <>
-            {/* DESKTOP QZ */}
 
+        ) : (
+
+          /* =================================================
+             DESKTOP QZ
+          ================================================= */
+
+          <>
             <div
               style={{
                 display:
@@ -1601,6 +2052,7 @@ export default function BillingTable({
                 gap: "10px",
               }}
             >
+
               <div
                 style={{
                   width: "38px",
@@ -1619,23 +2071,31 @@ export default function BillingTable({
                     "center",
                 }}
               >
+
                 {qzConnected ? (
+
                   <Wifi
                     size={20}
                     color="#16a34a"
                   />
+
                 ) : (
+
                   <WifiOff
                     size={20}
                     color="#dc2626"
                   />
+
                 )}
+
               </div>
 
               <div>
+
                 <div
                   style={{
-                    fontWeight: 600,
+                    fontWeight:
+                      600,
                     fontSize:
                       "14px",
                   }}
@@ -1657,7 +2117,9 @@ export default function BillingTable({
                     selectedPrinter ||
                     "No printer selected"}
                 </div>
+
               </div>
+
             </div>
 
             <div
@@ -1669,6 +2131,7 @@ export default function BillingTable({
                   "wrap",
               }}
             >
+
               <button
                 type="button"
                 onClick={
@@ -1692,11 +2155,13 @@ export default function BillingTable({
                   gap: "7px",
                 }}
               >
+
                 <Printer
                   size={16}
                 />
 
                 Select Printer
+
               </button>
 
               <button
@@ -1727,6 +2192,7 @@ export default function BillingTable({
                   gap: "7px",
                 }}
               >
+
                 <Printer
                   size={16}
                 />
@@ -1734,6 +2200,7 @@ export default function BillingTable({
                 {testPrinting
                   ? "Printing..."
                   : "Test Print"}
+
               </button>
 
               {qzConnected && (
@@ -1762,59 +2229,72 @@ export default function BillingTable({
                     gap: "7px",
                   }}
                 >
+
                   <WifiOff
                     size={16}
                   />
 
                   Disconnect
+
                 </button>
               )}
+
             </div>
           </>
         )}
+
       </div>
 
-      {/* ERROR */}
+      {/* ====================================================
+          ERROR
+      ===================================================== */}
 
       {printerError && (
         <div
           style={{
-            marginBottom: "16px",
+            marginBottom:
+              "16px",
             padding:
               "10px 14px",
             background:
               "#fef2f2",
             border:
               "1px solid #fecaca",
-            color: "#991b1b",
+            color:
+              "#991b1b",
             borderRadius:
               "8px",
-            fontSize: "13px",
+            fontSize:
+              "13px",
           }}
         >
           {printerError}
         </div>
       )}
 
-      {/* =====================================================
+      {/* ====================================================
           DESKTOP TABLE
-      ====================================================== */}
+      ===================================================== */}
 
       <div
         className="billing-desktop-table"
         style={{
           background: "#fff",
-          borderRadius: "12px",
+          borderRadius:
+            "12px",
           border:
             "1px solid #e5e7eb",
           overflow: "hidden",
         }}
       >
+
         <div
           style={{
-            overflowX: "auto",
+            overflowX:
+              "auto",
           }}
         >
+
           <table
             style={{
               width: "100%",
@@ -1822,7 +2302,9 @@ export default function BillingTable({
                 "collapse",
             }}
           >
+
             <thead>
+
               <tr
                 style={{
                   background:
@@ -1831,6 +2313,7 @@ export default function BillingTable({
                     "1px solid #e5e7eb",
                 }}
               >
+
                 <th
                   style={{
                     padding:
@@ -1908,12 +2391,16 @@ export default function BillingTable({
                 >
                   Actions
                 </th>
+
               </tr>
+
             </thead>
 
             <tbody>
+
               {bills.map(
                 (bill) => {
+
                   const statusStyle =
                     getStatusStyle(
                       bill.status
@@ -1929,6 +2416,9 @@ export default function BillingTable({
                           "1px solid #f3f4f6",
                       }}
                     >
+
+                      {/* Invoice */}
+
                       <td
                         style={{
                           padding:
@@ -1942,12 +2432,15 @@ export default function BillingTable({
                           "-"}
                       </td>
 
+                      {/* Customer */}
+
                       <td
                         style={{
                           padding:
                             "14px 16px",
                         }}
                       >
+
                         <div
                           style={{
                             fontWeight:
@@ -1969,12 +2462,13 @@ export default function BillingTable({
                                 "3px",
                             }}
                           >
-                            {
-                              bill.mobile
-                            }
+                            {bill.mobile}
                           </div>
                         )}
+
                       </td>
+
+                      {/* Date */}
 
                       <td
                         style={{
@@ -1982,6 +2476,7 @@ export default function BillingTable({
                             "14px 16px",
                         }}
                       >
+
                         <div
                           style={{
                             display:
@@ -1991,6 +2486,7 @@ export default function BillingTable({
                             gap: "6px",
                           }}
                         >
+
                           <Calendar
                             size={15}
                           />
@@ -2002,8 +2498,12 @@ export default function BillingTable({
                                 "en-IN"
                               )
                             : "-"}
+
                         </div>
+
                       </td>
+
+                      {/* Amount */}
 
                       <td
                         style={{
@@ -2022,6 +2522,8 @@ export default function BillingTable({
                         )}
                       </td>
 
+                      {/* Status */}
+
                       <td
                         style={{
                           padding:
@@ -2030,6 +2532,7 @@ export default function BillingTable({
                             "center",
                         }}
                       >
+
                         <span
                           style={{
                             ...statusStyle,
@@ -2046,7 +2549,10 @@ export default function BillingTable({
                           {bill.status ||
                             "Paid"}
                         </span>
+
                       </td>
+
+                      {/* Actions */}
 
                       <td
                         style={{
@@ -2054,6 +2560,7 @@ export default function BillingTable({
                             "14px 16px",
                         }}
                       >
+
                         <div
                           style={{
                             display:
@@ -2063,7 +2570,8 @@ export default function BillingTable({
                             gap: "7px",
                           }}
                         >
-                          {/* VIEW */}
+
+                          {/* View */}
 
                           <button
                             type="button"
@@ -2099,7 +2607,7 @@ export default function BillingTable({
                             />
                           </button>
 
-                          {/* DOWNLOAD */}
+                          {/* Download */}
 
                           <button
                             type="button"
@@ -2134,24 +2642,22 @@ export default function BillingTable({
                                 "center",
                             }}
                           >
+
                             {downloadingId ===
                             bill._id ? (
                               <RefreshCw
-                                size={
-                                  16
-                                }
+                                size={16}
                                 className="spin"
                               />
                             ) : (
                               <Download
-                                size={
-                                  16
-                                }
+                                size={16}
                               />
                             )}
+
                           </button>
 
-                          {/* PRINT */}
+                          {/* Print */}
 
                           <button
                             type="button"
@@ -2192,45 +2698,53 @@ export default function BillingTable({
                                 "center",
                             }}
                           >
+
                             {printingId ===
                             bill._id ? (
                               <RefreshCw
-                                size={
-                                  16
-                                }
+                                size={16}
                                 className="spin"
                               />
                             ) : (
                               <Printer
-                                size={
-                                  16
-                                }
+                                size={16}
                               />
                             )}
+
                           </button>
+
                         </div>
+
                       </td>
+
                     </tr>
                   );
                 }
               )}
+
             </tbody>
+
           </table>
+
         </div>
+
       </div>
 
-      {/* =====================================================
+      {/* ====================================================
           MOBILE CARDS
-      ====================================================== */}
+      ===================================================== */}
 
       <div
         className="billing-mobile-cards"
         style={{
-          display: "none",
+          display:
+            "none",
         }}
       >
+
         {bills.map(
           (bill) => {
+
             const statusStyle =
               getStatusStyle(
                 bill.status
@@ -2254,6 +2768,7 @@ export default function BillingTable({
                     "12px",
                 }}
               >
+
                 <div
                   style={{
                     display:
@@ -2263,7 +2778,9 @@ export default function BillingTable({
                     gap: "10px",
                   }}
                 >
+
                   <div>
+
                     <div
                       style={{
                         fontWeight:
@@ -2287,6 +2804,7 @@ export default function BillingTable({
                       {bill.customerName ||
                         "-"}
                     </div>
+
                   </div>
 
                   <span
@@ -2307,6 +2825,7 @@ export default function BillingTable({
                     {bill.status ||
                       "Paid"}
                   </span>
+
                 </div>
 
                 <div
@@ -2319,6 +2838,7 @@ export default function BillingTable({
                       "12px",
                   }}
                 >
+
                   <span
                     style={{
                       fontSize:
@@ -2343,6 +2863,7 @@ export default function BillingTable({
                         0
                     )}
                   </strong>
+
                 </div>
 
                 <div
@@ -2354,7 +2875,8 @@ export default function BillingTable({
                       "14px",
                   }}
                 >
-                  {/* VIEW */}
+
+                  {/* View */}
 
                   <button
                     type="button"
@@ -2373,8 +2895,11 @@ export default function BillingTable({
                         "9px",
                       borderRadius:
                         "7px",
+                      cursor:
+                        "pointer",
                     }}
                   >
+
                     <Eye
                       size={15}
                       style={{
@@ -2386,6 +2911,7 @@ export default function BillingTable({
                     />
 
                     View
+
                   </button>
 
                   {/* PDF */}
@@ -2407,8 +2933,11 @@ export default function BillingTable({
                         "9px",
                       borderRadius:
                         "7px",
+                      cursor:
+                        "pointer",
                     }}
                   >
+
                     <Download
                       size={15}
                       style={{
@@ -2420,9 +2949,10 @@ export default function BillingTable({
                     />
 
                     PDF
+
                   </button>
 
-                  {/* PRINT */}
+                  {/* Print */}
 
                   <button
                     type="button"
@@ -2430,6 +2960,10 @@ export default function BillingTable({
                       handlePrint(
                         bill
                       )
+                    }
+                    disabled={
+                      printingId ===
+                      bill._id
                     }
                     style={{
                       flex: 1,
@@ -2443,30 +2977,51 @@ export default function BillingTable({
                         "9px",
                       borderRadius:
                         "7px",
+                      cursor:
+                        "pointer",
                     }}
                   >
-                    <Printer
-                      size={15}
-                      style={{
-                        verticalAlign:
-                          "middle",
-                        marginRight:
-                          "4px",
-                      }}
-                    />
+
+                    {printingId ===
+                    bill._id ? (
+                      <RefreshCw
+                        size={15}
+                        className="spin"
+                        style={{
+                          verticalAlign:
+                            "middle",
+                          marginRight:
+                            "4px",
+                        }}
+                      />
+                    ) : (
+                      <Printer
+                        size={15}
+                        style={{
+                          verticalAlign:
+                            "middle",
+                          marginRight:
+                            "4px",
+                        }}
+                      />
+                    )}
 
                     Print
+
                   </button>
+
                 </div>
+
               </div>
             );
           }
         )}
+
       </div>
 
-      {/* =====================================================
+      {/* ====================================================
           PAGINATION
-      ====================================================== */}
+      ===================================================== */}
 
       {pagination && (
         <div
@@ -2484,6 +3039,7 @@ export default function BillingTable({
               "wrap",
           }}
         >
+
           <div
             style={{
               fontSize:
@@ -2504,9 +3060,13 @@ export default function BillingTable({
             style={{
               display:
                 "flex",
-              gap: "7px",
+              gap:
+                "7px",
             }}
           >
+
+            {/* Previous */}
+
             <button
               type="button"
               disabled={
@@ -2539,6 +3099,8 @@ export default function BillingTable({
               Previous
             </button>
 
+            {/* Next */}
+
             <button
               type="button"
               disabled={
@@ -2567,13 +3129,15 @@ export default function BillingTable({
             >
               Next
             </button>
+
           </div>
+
         </div>
       )}
 
-      {/* =====================================================
+      {/* ====================================================
           DESKTOP PRINTER MODAL
-      ====================================================== */}
+      ===================================================== */}
 
       {showPrinterModal &&
         !isAndroid && (
@@ -2590,14 +3154,17 @@ export default function BillingTable({
                 "center",
               justifyContent:
                 "center",
-              zIndex: 9998,
+              zIndex:
+                9998,
               padding:
                 "20px",
             }}
           >
+
             <div
               style={{
-                width: "100%",
+                width:
+                  "100%",
                 maxWidth:
                   "500px",
                 background:
@@ -2610,7 +3177,8 @@ export default function BillingTable({
                   "0 20px 50px rgba(0,0,0,0.2)",
               }}
             >
-              {/* HEADER */}
+
+              {/* Header */}
 
               <div
                 style={{
@@ -2624,7 +3192,9 @@ export default function BillingTable({
                     "18px",
                 }}
               >
+
                 <div>
+
                   <h3
                     style={{
                       margin: 0,
@@ -2643,9 +3213,9 @@ export default function BillingTable({
                         "#6b7280",
                     }}
                   >
-                    Select your thermal
-                    printer
+                    Select your thermal printer
                   </p>
+
                 </div>
 
                 <button
@@ -2668,9 +3238,10 @@ export default function BillingTable({
                     size={20}
                   />
                 </button>
+
               </div>
 
-              {/* REFRESH */}
+              {/* Refresh */}
 
               <button
                 type="button"
@@ -2681,7 +3252,8 @@ export default function BillingTable({
                   printerLoading
                 }
                 style={{
-                  width: "100%",
+                  width:
+                    "100%",
                   border:
                     "1px solid #d1d5db",
                   background:
@@ -2700,9 +3272,11 @@ export default function BillingTable({
                     "center",
                   justifyContent:
                     "center",
-                  gap: "8px",
+                  gap:
+                    "8px",
                 }}
               >
+
                 <RefreshCw
                   size={16}
                   className={
@@ -2715,12 +3289,14 @@ export default function BillingTable({
                 {printerLoading
                   ? "Searching..."
                   : "Refresh Printers"}
+
               </button>
 
-              {/* PRINTER LIST */}
+              {/* Printer list */}
 
               {printers.length ===
               0 ? (
+
                 <div
                   style={{
                     padding:
@@ -2737,31 +3313,38 @@ export default function BillingTable({
                       "13px",
                   }}
                 >
-                  No printers
-                  found.
+
+                  No printers found.
 
                   <br />
 
-                  Make sure printer
-                  is installed on
-                  this computer.
+                  Make sure printer is
+                  installed on this computer.
+
                 </div>
+
               ) : (
+
                 <div
                   style={{
                     display:
                       "flex",
                     flexDirection:
                       "column",
-                    gap: "8px",
+                    gap:
+                      "8px",
                     maxHeight:
                       "300px",
                     overflowY:
                       "auto",
                   }}
                 >
+
                   {printers.map(
-                    (printer) => (
+                    (
+                      printer
+                    ) => (
+
                       <button
                         key={
                           printer
@@ -2796,15 +3379,18 @@ export default function BillingTable({
                             "pointer",
                         }}
                       >
+
                         <div
                           style={{
                             display:
                               "flex",
                             alignItems:
                               "center",
-                            gap: "10px",
+                            gap:
+                              "10px",
                           }}
                         >
+
                           <Printer
                             size={18}
                           />
@@ -2817,19 +3403,25 @@ export default function BillingTable({
                           >
                             {printer}
                           </span>
+
                         </div>
+
                       </button>
+
                     )
                   )}
+
                 </div>
               )}
+
             </div>
+
           </div>
         )}
 
-      {/* =====================================================
+      {/* ====================================================
           RESPONSIVE CSS
-      ====================================================== */}
+      ===================================================== */}
 
       <style>
         {`
@@ -2866,6 +3458,7 @@ export default function BillingTable({
           }
         `}
       </style>
+
     </div>
   );
 }
