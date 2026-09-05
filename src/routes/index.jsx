@@ -2,6 +2,7 @@ import { BrowserRouter, Routes } from "react-router-dom";
 import { Suspense } from "react";
 import AdminRoutes from "./admin.routes";
 import PublicRoutes from "./public.routes";
+import ScrollToTop from "../components/ScrollToTop";
 
 const AppLoading = () => (
   <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50/50 space-y-4">
@@ -10,9 +11,11 @@ const AppLoading = () => (
   </div>
 );
 
+
 const AppRoutes = () => {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Suspense fallback={<AppLoading />}>
         <Routes>
           {PublicRoutes}
