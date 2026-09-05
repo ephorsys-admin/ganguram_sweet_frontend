@@ -1,5 +1,480 @@
-import { Calendar, Eye, Download, ReceiptText, X, FileText } from "lucide-react";
-import { useState } from "react";
+import {
+  Calendar,
+  Eye,
+  Download,
+  ReceiptText,
+  Printer,
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  X,
+  Usb,
+} from "lucide-react";
+
+import { useEffect, useRef, useState } from "react";
+import qz from "qz-tray";
+
+// ============================================================
+// SHOP CONFIG
+// ============================================================
+
+const SHOP = {
+  name: "MAHARAJA",
+  subName: "GANGURAM SWEETS",
+  tagline: "QUALITY SWEETS, HAPPY MOMENTS",
+  address:
+    "MIG 30, Near Fire Station Square, Housing Board Colony, Baramunda, Bhubaneswar, Odisha 751003",
+  phone: "+91 9114029555",
+};
+
+// ============================================================
+// DEVICE CHECK
+// ============================================================
+
+const isAndroidDevice = () => {
+  return /Android/i.test(navigator.userAgent);
+};
+
+// ============================================================
+// ESC/POS
+// ============================================================
+
+const ESC = "\x1B";
+const GS = "\x1D";
+
+const ESC_POS = {
+  INIT: `${ESC}@`,
+
+  ALIGN_LEFT: `${ESC}a\x00`,
+  ALIGN_CENTER: `${ESC}a\x01`,
+  ALIGN_RIGHT: `${ESC}a\x02`,
+
+  BOLD_ON: `${ESC}E\x01`,
+  BOLD_OFF: `${ESC}E\x00`,
+
+  DOUBLE_ON: `${ESC}!\x30`,
+  NORMAL: `${ESC}!\x00`,
+
+  CUT: `${GS}V\x00`,
+};
+
+// ============================================================
+// TEXT HELPERS
+// ============================================================
+
+const cleanText = (value = "") => {
+  return String(value)
+    .replace(/[₹]/g, "Rs.")
+    .replace(/[^\x00-\x7F]/g, "");
+};
+
+const padRight = (text = "", length = 32) => {
+  text = cleanText(text);
+
+  if (text.length > length) {
+    return text.substring(0, length);
+  }
+
+  return text + " ".repeat(length - text.length);
+};
+
+const padLeft = (text = "", length = 32) => {
+  text = cleanText(text);
+
+  if (text.length > length) {
+    return text.substring(0, length);
+  }
+
+  return " ".repeat(length - text.length) + text;
+};
+
+const twoColumn = (left, right, width = 32) => {
+  left = cleanText(left);
+  right = cleanText(right);
+
+  const available = width - right.length;
+
+  if (left.length > available) {
+    left = left.substring(0, Math.max(0, available - 1)) + ".";
+  }
+
+  return (
+    left +
+    " ".repeat(Math.max(1, available - left.length)) +
+    right
+  );
+};
+
+// ============================================================
+// PRICE FORMAT
+// ============================================================
+
+const formatAmount = (amount) => {
+  const number = Number(amount || 0);
+
+  return number.toFixed(2);
+};
+
+// ============================================================
+// RAWBT RECEIPT GENERATOR
+// ============================================================
+
+const buildRawBTReceipt = (bill) => {
+  const WIDTH = 32;
+
+  let receipt = "";
+
+  // ----------------------------------------------------------
+  // INIT
+  // ----------------------------------------------------------
+
+  receipt += ESC_POS.INIT;
+
+  // ----------------------------------------------------------
+  // SHOP HEADER
+  // ----------------------------------------------------------
+
+  receipt += ESC_POS.ALIGN_CENTER;
+
+  receipt += ESC_POS.BOLD_ON;
+  receipt += ESC_POS.DOUBLE_ON;
+
+  receipt += `${cleanText(SHOP.name)}\n`;
+
+  receipt += ESC_POS.NORMAL;
+  receipt += ESC_POS.BOLD_ON;
+
+  receipt += `${cleanText(SHOP.subName)}\n`;
+
+  receipt += ESC_POS.BOLD_OFF;
+
+  receipt += `${cleanText(SHOP.tagline)}\n`;
+  receipt += `${cleanText(SHOP.phone)}\n`;
+
+  receipt += "\n";
+
+  // ----------------------------------------------------------
+  // TAX INVOICE
+  // ----------------------------------------------------------
+
+  receipt += ESC_POS.ALIGN_CENTER;
+  receipt += ESC_POS.BOLD_ON;
+
+  receipt += "TAX INVOICE\n";
+
+  receipt += ESC_POS.BOLD_OFF;
+
+  receipt += "-".repeat(WIDTH) + "\n";
+
+  // ----------------------------------------------------------
+  // BILL INFORMATION
+  // ----------------------------------------------------------
+
+  receipt += ESC_POS.ALIGN_LEFT;
+
+  receipt += twoColumn(
+    "Invoice",
+    bill.invoiceNumber || bill._id || "-",
+    WIDTH
+  );
+
+  receipt += "\n";
+
+  const createdDate = bill.createdAt
+    ? new Date(bill.createdAt)
+    : new Date();
+
+  receipt += twoColumn(
+    "Date",
+    createdDate.toLocaleDateString("en-IN"),
+    WIDTH
+  );
+
+  receipt += "\n";
+
+  receipt += twoColumn(
+    "Time",
+    createdDate.toLocaleTimeString("en-IN"),
+    WIDTH
+  );
+
+  receipt += "\n";
+
+  receipt += "-".repeat(WIDTH) + "\n";
+
+  // ----------------------------------------------------------
+  // CUSTOMER
+  // ----------------------------------------------------------
+
+  receipt += ESC_POS.BOLD_ON;
+  receipt += "CUSTOMER\n";
+  receipt += ESC_POS.BOLD_OFF;
+
+  receipt += `Name : ${cleanText(
+    bill.customerName || "-"
+  )}\n`;
+
+  if (bill.mobile) {
+    receipt += `Mobile: ${cleanText(
+      bill.mobile
+    )}\n`;
+  }
+
+  receipt += "-".repeat(WIDTH) + "\n";
+
+  // ----------------------------------------------------------
+  // ITEMS
+  // ----------------------------------------------------------
+
+  receipt += ESC_POS.BOLD_ON;
+  receipt += "ITEM\n";
+  receipt += ESC_POS.BOLD_OFF;
+
+  receipt += "-".repeat(WIDTH) + "\n";
+
+  const items = Array.isArray(bill.items)
+    ? bill.items
+    : [];
+
+  items.forEach((item) => {
+    const productName = cleanText(
+      item.productName ||
+        item.name ||
+        "Item"
+    );
+
+    const quantity = Number(
+      item.quantity ||
+        item.qty ||
+        1
+    );
+
+    const price = Number(
+      item.price ||
+        item.unitPrice ||
+        0
+    );
+
+    const total = Number(
+      item.total ||
+        quantity * price
+    );
+
+    // Product name
+    receipt += `${productName}\n`;
+
+    // Qty x price + total
+    receipt += twoColumn(
+      `${quantity} x ${formatAmount(
+        price
+      )}`,
+      formatAmount(total),
+      WIDTH
+    );
+
+    receipt += "\n";
+  });
+
+  receipt += "-".repeat(WIDTH) + "\n";
+
+  // ----------------------------------------------------------
+  // TOTALS
+  // ----------------------------------------------------------
+
+  const subtotal = Number(
+    bill.subTotal ??
+      bill.subtotal ??
+      bill.totalAmount ??
+      0
+  );
+
+  const discount = Number(
+    bill.discountAmount || 0
+  );
+
+  const grandTotal = Number(
+    bill.finalAmount ??
+      bill.grandTotal ??
+      subtotal - discount
+  );
+
+  receipt += twoColumn(
+    "Subtotal",
+    `Rs.${formatAmount(subtotal)}`,
+    WIDTH
+  );
+
+  receipt += "\n";
+
+  if (discount > 0) {
+    receipt += twoColumn(
+      "Discount",
+      `-Rs.${formatAmount(discount)}`,
+      WIDTH
+    );
+
+    receipt += "\n";
+  }
+
+  receipt += "-".repeat(WIDTH) + "\n";
+
+  receipt += ESC_POS.BOLD_ON;
+
+  receipt += twoColumn(
+    "GRAND TOTAL",
+    `Rs.${formatAmount(grandTotal)}`,
+    WIDTH
+  );
+
+  receipt += "\n";
+
+  receipt += ESC_POS.BOLD_OFF;
+
+  // ----------------------------------------------------------
+  // PAYMENT
+  // ----------------------------------------------------------
+
+  receipt += "-".repeat(WIDTH) + "\n";
+
+  receipt += twoColumn(
+    "Payment",
+    cleanText(
+      bill.paymentMode ||
+        bill.paymentMethod ||
+        "Cash"
+    ),
+    WIDTH
+  );
+
+  receipt += "\n";
+
+  // ----------------------------------------------------------
+  // FOOTER
+  // ----------------------------------------------------------
+
+  receipt += "\n";
+
+  receipt += ESC_POS.ALIGN_CENTER;
+
+  receipt += "Thank You!\n";
+  receipt += "Visit Again\n";
+
+  receipt += "\n";
+  receipt += "\n";
+  receipt += "\n";
+
+  // ----------------------------------------------------------
+  // CUT
+  // ----------------------------------------------------------
+
+  receipt += ESC_POS.CUT;
+
+  return receipt;
+};
+
+// ============================================================
+// RAWBT BASE64 HELPER
+// ============================================================
+
+const textToBase64 = (text) => {
+  const bytes = new TextEncoder().encode(text);
+
+  let binary = "";
+
+  const chunkSize = 0x8000;
+
+  for (
+    let i = 0;
+    i < bytes.length;
+    i += chunkSize
+  ) {
+    const chunk = bytes.subarray(
+      i,
+      i + chunkSize
+    );
+
+    binary += String.fromCharCode(
+      ...chunk
+    );
+  }
+
+  return btoa(binary);
+};
+
+// ============================================================
+// RAWBT PRINT
+// ============================================================
+
+const printWithRawBT = async (bill) => {
+  try {
+    if (!isAndroidDevice()) {
+      throw new Error(
+        "RawBT printing is available only on Android."
+      );
+    }
+
+    if (!bill) {
+      throw new Error(
+        "Bill data not available."
+      );
+    }
+
+    const rawData =
+      buildRawBTReceipt(bill);
+
+    if (!rawData) {
+      throw new Error(
+        "Receipt data could not be generated."
+      );
+    }
+
+    // Convert ESC/POS data to Base64
+    const base64Data =
+      textToBase64(rawData);
+
+    if (!base64Data) {
+      throw new Error(
+        "Base64 receipt data could not be generated."
+      );
+    }
+
+    // RawBT supported URI
+    const rawbtUrl =
+      `rawbt:base64,${base64Data}`;
+
+    console.log(
+      "RawBT print request started"
+    );
+
+    console.log(
+      "Invoice:",
+      bill.invoiceNumber ||
+        bill._id
+    );
+
+    console.log(
+      "RawBT URL length:",
+      rawbtUrl.length
+    );
+
+    // Open RawBT
+    window.location.href =
+      rawbtUrl;
+
+    return true;
+  } catch (error) {
+    console.error(
+      "RawBT print error:",
+      error
+    );
+
+    throw error;
+  }
+};
+
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 
 export default function BillingTable({
   bills = [],
@@ -9,288 +484,2086 @@ export default function BillingTable({
   search,
   statusFilter,
 }) {
-  const [downloadingId, setDownloadingId] = useState(null);
-  const [previewBill, setPreviewBill] = useState(null);
+  // ==========================================================
+  // STATE
+  // ==========================================================
 
-  const displayPrice = (val) => {
-    return typeof val === "number" ? val.toFixed(2) : Number(val || 0).toFixed(2);
+  const [downloadingId, setDownloadingId] =
+    useState(null);
+
+  const [showPrinterModal, setShowPrinterModal] =
+    useState(false);
+
+  const [printers, setPrinters] =
+    useState([]);
+
+  const [selectedPrinter, setSelectedPrinter] =
+    useState("");
+
+  const [connectedPrinter, setConnectedPrinter] =
+    useState("");
+
+  const [qzConnected, setQzConnected] =
+    useState(false);
+
+  const [printerLoading, setPrinterLoading] =
+    useState(false);
+
+  const [printerConnecting, setPrinterConnecting] =
+    useState(false);
+
+  const [printingId, setPrintingId] =
+    useState(null);
+
+  const [testPrinting, setTestPrinting] =
+    useState(false);
+
+  const [printerError, setPrinterError] =
+    useState("");
+
+  const [toast, setToast] =
+    useState(null);
+
+  const isConnectingRef =
+    useRef(false);
+
+  const connectPromiseRef =
+    useRef(null);
+
+  // ==========================================================
+  // DEVICE
+  // ==========================================================
+
+  const isAndroid =
+    isAndroidDevice();
+
+  // ==========================================================
+  // TOAST
+  // ==========================================================
+
+  const showToast = (
+    message,
+    type = "success"
+  ) => {
+    setToast({
+      message,
+      type,
+    });
+
+    setTimeout(() => {
+      setToast(null);
+    }, 3000);
   };
 
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case "Paid":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      case "Generated":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "Cancelled":
-      default:
-        return "bg-slate-100 text-slate-600 border-slate-200";
+  // ==========================================================
+  // PRICE
+  // ==========================================================
+
+  const displayPrice = (amount) => {
+    return `₹${Number(
+      amount || 0
+    ).toFixed(2)}`;
+  };
+
+  // ==========================================================
+  // STATUS
+  // ==========================================================
+
+  const getStatusStyle = (
+    status
+  ) => {
+    const value = String(
+      status || ""
+    ).toLowerCase();
+
+    if (
+      value === "paid" ||
+      value === "success" ||
+      value === "completed"
+    ) {
+      return {
+        background: "#dcfce7",
+        color: "#166534",
+      };
     }
-  };
 
-  const sanitizeFileName = (name) => {
-    return name
-      .trim()
-      .replace(/[^a-zA-Z0-9\s-]/g, "")
-      .replace(/\s+/g, "_");
-  };
-
-  const handleDownloadPdf = async (bill) => {
-    const url = bill?.invoiceUrl;
-
-    if (!url) {
-      alert("Invoice PDF is not available for this bill yet.");
-      return;
+    if (value === "pending") {
+      return {
+        background: "#fef3c7",
+        color: "#92400e",
+      };
     }
 
-    try {
-      setDownloadingId(bill._id);
-      const response = await fetch(url);
+    if (
+      value === "cancelled" ||
+      value === "failed"
+    ) {
+      return {
+        background: "#fee2e2",
+        color: "#991b1b",
+      };
+    }
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch PDF: ${response.status}`);
+    return {
+      background: "#f3f4f6",
+      color: "#374151",
+    };
+  };
+
+  // ==========================================================
+  // FILE NAME
+  // ==========================================================
+
+  const sanitizeFileName = (
+    name = ""
+  ) => {
+    return String(name)
+      .replace(
+        /[<>:"/\\|?*]/g,
+        "_"
+      )
+      .trim();
+  };
+
+  // ==========================================================
+  // QZ CONNECT
+  // ==========================================================
+
+  const connectQZTray =
+    async () => {
+      if (isAndroid) {
+        console.log(
+          "Android detected - QZ Tray not required."
+        );
+
+        return false;
       }
 
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+      if (
+        qz.websocket.isActive()
+      ) {
+        setQzConnected(true);
 
-      const cleanName = bill.customerName
-        ? sanitizeFileName(bill.customerName)
-        : bill.invoiceNumber;
+        return true;
+      }
 
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `Invoice_${cleanName}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error("PDF download failed", err);
-      window.open(url, "_blank", "noopener,noreferrer");
-    } finally {
-      setDownloadingId(null);
-    }
-  };
+      if (
+        isConnectingRef.current
+      ) {
+        return connectPromiseRef.current;
+      }
 
-  const handlePreview = (bill) => {
-    if (!bill?.invoiceUrl) {
-      alert("Invoice PDF is not available for this bill yet.");
+      isConnectingRef.current =
+        true;
+
+      connectPromiseRef.current =
+        (async () => {
+          try {
+            setPrinterError("");
+
+            await qz.websocket.connect();
+
+            setQzConnected(true);
+
+            console.log(
+              "QZ connected"
+            );
+
+            return true;
+          } catch (error) {
+            console.error(
+              "QZ connection error:",
+              error
+            );
+
+            setQzConnected(false);
+
+            setPrinterError(
+              "QZ Tray connect nahi hua. Please QZ Tray install/open karein."
+            );
+
+            return false;
+          } finally {
+            isConnectingRef.current =
+              false;
+
+            connectPromiseRef.current =
+              null;
+          }
+        })();
+
+      return connectPromiseRef.current;
+    };
+
+  // ==========================================================
+  // INITIAL LOAD
+  // ==========================================================
+
+  useEffect(() => {
+    if (isAndroid) {
+      console.log(
+        "Android device detected."
+      );
+
+      console.log(
+        "RawBT mode enabled."
+      );
+
       return;
     }
-    setPreviewBill(bill);
-  };
 
-  const closePreview = () => setPreviewBill(null);
+    connectQZTray();
+
+    const savedPrinter =
+      localStorage.getItem(
+        "ganguram_selected_printer"
+      );
+
+    if (savedPrinter) {
+      setSelectedPrinter(
+        savedPrinter
+      );
+
+      setConnectedPrinter(
+        savedPrinter
+      );
+    }
+  }, []);
+
+  // ==========================================================
+  // QZ PRINTER SEARCH
+  // ==========================================================
+
+  const searchPrinters =
+    async () => {
+      if (isAndroid) {
+        return [];
+      }
+
+      try {
+        setPrinterLoading(true);
+        setPrinterError("");
+
+        const connected =
+          await connectQZTray();
+
+        if (!connected) {
+          return [];
+        }
+
+        const printerList =
+          await qz.printers.find();
+
+        console.log(
+          "Available printers:",
+          printerList
+        );
+
+        setPrinters(
+          printerList || []
+        );
+
+        return printerList || [];
+      } catch (error) {
+        console.error(
+          "Printer search error:",
+          error
+        );
+
+        setPrinterError(
+          error?.message ||
+            "Printer list load nahi ho saka."
+        );
+
+        return [];
+      } finally {
+        setPrinterLoading(false);
+      }
+    };
+
+  // ==========================================================
+  // OPEN PRINTER MODAL
+  // ==========================================================
+
+  const openPrinterModal =
+    async () => {
+      if (isAndroid) {
+        showToast(
+          "Android par RawBT + USB OTG use hoga.",
+          "success"
+        );
+
+        return;
+      }
+
+      setShowPrinterModal(true);
+
+      await searchPrinters();
+    };
+
+  // ==========================================================
+  // SELECT QZ PRINTER
+  // ==========================================================
+
+  const handleConnectPrinter =
+    async (printerName) => {
+      if (!printerName) {
+        return;
+      }
+
+      try {
+        setPrinterConnecting(
+          true
+        );
+
+        setPrinterError("");
+
+        const connected =
+          await connectQZTray();
+
+        if (!connected) {
+          throw new Error(
+            "QZ Tray connected nahi hai."
+          );
+        }
+
+        const printerExists =
+          printers.includes(
+            printerName
+          );
+
+        if (!printerExists) {
+          const available =
+            await qz.printers.find();
+
+          if (
+            !available.includes(
+              printerName
+            )
+          ) {
+            throw new Error(
+              "Selected printer available nahi hai."
+            );
+          }
+        }
+
+        setSelectedPrinter(
+          printerName
+        );
+
+        setConnectedPrinter(
+          printerName
+        );
+
+        localStorage.setItem(
+          "ganguram_selected_printer",
+          printerName
+        );
+
+        showToast(
+          `Printer connected: ${printerName}`
+        );
+
+        setShowPrinterModal(
+          false
+        );
+      } catch (error) {
+        console.error(
+          "Printer connection error:",
+          error
+        );
+
+        setPrinterError(
+          error?.message ||
+            "Printer connect nahi hua."
+        );
+
+        showToast(
+          "Printer connect nahi hua.",
+          "error"
+        );
+      } finally {
+        setPrinterConnecting(
+          false
+        );
+      }
+    };
+
+  // ==========================================================
+  // DISCONNECT QZ
+  // ==========================================================
+
+  const disconnectQZ =
+    async () => {
+      try {
+        if (
+          qz.websocket.isActive()
+        ) {
+          await qz.websocket.disconnect();
+        }
+      } catch (error) {
+        console.error(
+          "QZ disconnect error:",
+          error
+        );
+      } finally {
+        setQzConnected(false);
+        setConnectedPrinter("");
+
+        showToast(
+          "Printer disconnected."
+        );
+      }
+    };
+
+  // ==========================================================
+  // DOWNLOAD PDF
+  // ==========================================================
+
+  const handleDownloadPdf =
+    async (bill) => {
+      if (!bill?.invoiceUrl) {
+        showToast(
+          "Invoice PDF URL available nahi hai.",
+          "error"
+        );
+
+        return;
+      }
+
+      try {
+        setDownloadingId(
+          bill._id
+        );
+
+        const response =
+          await fetch(
+            bill.invoiceUrl
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            "PDF download failed."
+          );
+        }
+
+        const blob =
+          await response.blob();
+
+        const url =
+          window.URL.createObjectURL(
+            blob
+          );
+
+        const link =
+          document.createElement(
+            "a"
+          );
+
+        link.href = url;
+
+        link.download =
+          sanitizeFileName(
+            `${
+              bill.invoiceNumber ||
+              "invoice"
+            }.pdf`
+          );
+
+        document.body.appendChild(
+          link
+        );
+
+        link.click();
+
+        link.remove();
+
+        window.URL.revokeObjectURL(
+          url
+        );
+
+        showToast(
+          "Invoice downloaded successfully."
+        );
+      } catch (error) {
+        console.error(
+          "Download error:",
+          error
+        );
+
+        showToast(
+          "Invoice download failed.",
+          "error"
+        );
+      } finally {
+        setDownloadingId(null);
+      }
+    };
+
+  // ==========================================================
+  // FETCH PDF BASE64
+  // ==========================================================
+
+  const fetchPdfAsBase64 =
+    async (pdfUrl) => {
+      const response =
+        await fetch(pdfUrl);
+
+      if (!response.ok) {
+        throw new Error(
+          "Invoice PDF fetch failed."
+        );
+      }
+
+      const blob =
+        await response.blob();
+
+      const arrayBuffer =
+        await blob.arrayBuffer();
+
+      const bytes =
+        new Uint8Array(
+          arrayBuffer
+        );
+
+      let binary = "";
+
+      const chunkSize =
+        0x8000;
+
+      for (
+        let i = 0;
+        i < bytes.length;
+        i += chunkSize
+      ) {
+        const chunk =
+          bytes.subarray(
+            i,
+            i + chunkSize
+          );
+
+        binary +=
+          String.fromCharCode(
+            ...chunk
+          );
+      }
+
+      return btoa(binary);
+    };
+
+  // ==========================================================
+  // DESKTOP QZ PDF PRINT
+  // ==========================================================
+
+  const handleDirectPrint =
+    async (bill) => {
+      if (isAndroid) {
+        return;
+      }
+
+      if (!bill?.invoiceUrl) {
+        showToast(
+          "Invoice PDF available nahi hai.",
+          "error"
+        );
+
+        return;
+      }
+
+      try {
+        setPrintingId(
+          bill._id
+        );
+
+        setPrinterError("");
+
+        const connected =
+          await connectQZTray();
+
+        if (!connected) {
+          throw new Error(
+            "QZ Tray connected nahi hai."
+          );
+        }
+
+        let printerName =
+          connectedPrinter ||
+          selectedPrinter;
+
+        if (!printerName) {
+          const saved =
+            localStorage.getItem(
+              "ganguram_selected_printer"
+            );
+
+          if (saved) {
+            printerName = saved;
+          }
+        }
+
+        if (!printerName) {
+          setShowPrinterModal(
+            true
+          );
+
+          await searchPrinters();
+
+          showToast(
+            "Please printer select karein.",
+            "error"
+          );
+
+          return;
+        }
+
+        const pdfBase64 =
+          await fetchPdfAsBase64(
+            bill.invoiceUrl
+          );
+
+        const config =
+          qz.configs.create(
+            printerName,
+            {
+              copies: 1,
+            }
+          );
+
+        const printData = [
+          {
+            type: "pixel",
+            format: "pdf",
+            flavor: "base64",
+            data: pdfBase64,
+          },
+        ];
+
+        await qz.print(
+          config,
+          printData
+        );
+
+        setConnectedPrinter(
+          printerName
+        );
+
+        showToast(
+          `Invoice sent to ${printerName}`
+        );
+      } catch (error) {
+        console.error(
+          "QZ print error:",
+          error
+        );
+
+        showToast(
+          error?.message ||
+            "Printing failed.",
+          "error"
+        );
+      } finally {
+        setPrintingId(null);
+      }
+    };
+
+  // ==========================================================
+  // ANDROID RAWBT PRINT
+  // ==========================================================
+
+  const handleRawBTPrint =
+    async (bill) => {
+      try {
+        setPrintingId(
+          bill._id
+        );
+
+        await printWithRawBT(
+          bill
+        );
+
+        showToast(
+          "RawBT open ho raha hai..."
+        );
+      } catch (error) {
+        console.error(
+          "RawBT error:",
+          error
+        );
+
+        showToast(
+          "RawBT printing start nahi hua.",
+          "error"
+        );
+      } finally {
+        setTimeout(() => {
+          setPrintingId(null);
+        }, 1000);
+      }
+    };
+
+  // ==========================================================
+  // MAIN PRINT FUNCTION
+  // ==========================================================
+
+  const handlePrint =
+    async (bill) => {
+      if (isAndroid) {
+        await handleRawBTPrint(
+          bill
+        );
+
+        return;
+      }
+
+      await handleDirectPrint(
+        bill
+      );
+    };
+
+  // ==========================================================
+  // DESKTOP TEST PRINT
+  // ==========================================================
+
+  const handleQZTestPrint =
+    async () => {
+      if (isAndroid) {
+        return;
+      }
+
+      try {
+        setTestPrinting(true);
+
+        const connected =
+          await connectQZTray();
+
+        if (!connected) {
+          throw new Error(
+            "QZ Tray connected nahi hai."
+          );
+        }
+
+        const printerName =
+          connectedPrinter ||
+          selectedPrinter;
+
+        if (!printerName) {
+          setShowPrinterModal(
+            true
+          );
+
+          await searchPrinters();
+
+          throw new Error(
+            "Please printer select karein."
+          );
+        }
+
+        const config =
+          qz.configs.create(
+            printerName,
+            {
+              copies: 1,
+            }
+          );
+
+        const data = [
+          ESC_POS.INIT,
+
+          ESC_POS.ALIGN_CENTER,
+
+          ESC_POS.BOLD_ON,
+          ESC_POS.DOUBLE_ON,
+
+          `${SHOP.name}\n`,
+
+          ESC_POS.NORMAL,
+
+          ESC_POS.BOLD_ON,
+          `${SHOP.subName}\n`,
+          ESC_POS.BOLD_OFF,
+
+          `${SHOP.phone}\n`,
+
+          "\n",
+
+          ESC_POS.BOLD_ON,
+          "TEST PRINT\n",
+          ESC_POS.BOLD_OFF,
+
+          "\n",
+
+          "Printer connection successful!\n",
+
+          "\n",
+
+          ESC_POS.CUT,
+        ];
+
+        await qz.print(
+          config,
+          data
+        );
+
+        showToast(
+          "Test print sent successfully."
+        );
+      } catch (error) {
+        console.error(
+          "Test print error:",
+          error
+        );
+
+        showToast(
+          error?.message ||
+            "Test print failed.",
+          "error"
+        );
+      } finally {
+        setTestPrinting(false);
+      }
+    };
+
+  // ==========================================================
+  // ANDROID RAWBT TEST
+  // ==========================================================
+
+  const handleRawBTTestPrint =
+    async () => {
+      try {
+        setTestPrinting(true);
+
+        const testBill = {
+          _id: "TEST",
+
+          invoiceNumber:
+            "TEST-001",
+
+          customerName:
+            "Test Customer",
+
+          mobile:
+            "9999999999",
+
+          items: [
+            {
+              productName:
+                "Test Item",
+
+              quantity: 1,
+
+              price: 100,
+
+              total: 100,
+            },
+          ],
+
+          subTotal: 100,
+
+          discountAmount: 0,
+
+          finalAmount: 100,
+
+          paymentMode:
+            "Cash",
+
+          createdAt:
+            new Date().toISOString(),
+        };
+
+        await printWithRawBT(
+          testBill
+        );
+
+        showToast(
+          "RawBT test print start ho gaya."
+        );
+      } catch (error) {
+        console.error(
+          "RawBT test error:",
+          error
+        );
+
+        showToast(
+          "RawBT test print failed.",
+          "error"
+        );
+      } finally {
+        setTimeout(() => {
+          setTestPrinting(false);
+        }, 1000);
+      }
+    };
+
+  // ==========================================================
+  // EMPTY DATA
+  // ==========================================================
+
+  if (
+    !bills ||
+    bills.length === 0
+  ) {
+    return (
+      <div
+        style={{
+          padding: "40px",
+          textAlign: "center",
+          background: "#fff",
+          borderRadius: "12px",
+        }}
+      >
+        <ReceiptText
+          size={40}
+          style={{
+            margin:
+              "0 auto 10px",
+            opacity: 0.5,
+          }}
+        />
+
+        <h3>
+          No bills found
+        </h3>
+
+        <p>
+          No invoice records available.
+        </p>
+      </div>
+    );
+  }
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
 
   return (
-    <div className="w-full space-y-6">
-      {bills.length === 0 ? (
-        <div className="bg-white border border-[#E6CCB2]/30 rounded-3xl p-12 text-center flex flex-col items-center justify-center shadow-xs space-y-3">
-          <div className="w-16 h-16 bg-[#FAF6F0] rounded-2xl flex items-center justify-center text-[#DFA250] mb-2 border border-[#E6CCB2]/20">
-            <ReceiptText className="w-8 h-8" />
-          </div>
-          <h3 className="font-extrabold text-[#3D271B] text-lg sm:text-xl">No Bills Found</h3>
-          <p className="text-sm text-[#6E5A4F] max-w-md">
-            {search || statusFilter !== "All"
-              ? "We couldn't find any bills matching your search or filters. Try modifying your inputs."
-              : "Generate a new bill request for sweet orders or walk-in purchases."}
-          </p>
+    <div
+      style={{
+        width: "100%",
+      }}
+    >
+      {/* TOAST */}
+
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            top: "20px",
+            right: "20px",
+            zIndex: 9999,
+            padding:
+              "12px 18px",
+            borderRadius: "8px",
+            background:
+              toast.type ===
+              "error"
+                ? "#dc2626"
+                : "#16a34a",
+            color: "#fff",
+            boxShadow:
+              "0 5px 20px rgba(0,0,0,0.2)",
+            fontSize: "14px",
+            fontWeight: 500,
+          }}
+        >
+          {toast.message}
         </div>
-      ) : (
-        <>
-          {/* Mobile Card Grid View */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 lg:hidden">
-            {bills.map((bill) => {
-              const dateStr = bill.generatedAt || bill.createdAt
-                ? new Date(bill.generatedAt || bill.createdAt).toLocaleDateString("en-IN", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric"
-                })
-                : "—";
+      )}
 
-              return (
+      {/* =====================================================
+          PRINTER BAR
+      ====================================================== */}
+
+      <div
+        style={{
+          marginBottom: "16px",
+          padding:
+            "12px 16px",
+          background: "#fff",
+          borderRadius: "10px",
+          border:
+            "1px solid #e5e7eb",
+          display: "flex",
+          alignItems:
+            "center",
+          justifyContent:
+            "space-between",
+          gap: "12px",
+          flexWrap: "wrap",
+        }}
+      >
+        {/* ANDROID */}
+
+        {isAndroid ? (
+          <>
+            <div
+              style={{
+                display:
+                  "flex",
+                alignItems:
+                  "center",
+                gap: "10px",
+              }}
+            >
+              <div
+                style={{
+                  width: "38px",
+                  height: "38px",
+                  borderRadius:
+                    "8px",
+                  background:
+                    "#dcfce7",
+                  display:
+                    "flex",
+                  alignItems:
+                    "center",
+                  justifyContent:
+                    "center",
+                }}
+              >
+                <Usb
+                  size={20}
+                  color="#16a34a"
+                />
+              </div>
+
+              <div>
                 <div
-                  key={bill._id}
-                  className="bg-white p-6 rounded-3xl border border-[#E6CCB2]/30 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between gap-5"
+                  style={{
+                    fontWeight: 600,
+                    fontSize:
+                      "14px",
+                  }}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-extrabold font-mono text-[#a65827] bg-[#FAF6F0] px-3 py-1.5 rounded-xl text-xs sm:text-sm tracking-wider uppercase border border-[#E6CCB2]/30">
-                      {bill.invoiceNumber || `ID: ${bill._id.substring(18)}`}
-                    </span>
-                    <span className="inline-flex px-3 py-1 bg-[#FAF6F0] border border-[#E6CCB2]/30 rounded-xl text-xs text-[#6E5A4F] font-bold uppercase tracking-wide">
-                      {bill.billType}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <h4 className="font-extrabold text-base sm:text-lg text-[#3D271B] leading-tight">
-                        {bill.customerName}
-                      </h4>
-                      <p className="text-xs sm:text-sm text-[#6E5A4F] font-semibold font-mono">
-                        Phone: {bill.mobile || "N/A"}
-                      </p>
-                    </div>
-
-                    <div className="flex justify-between items-center text-xs sm:text-sm font-semibold border-t border-[#FAF6F0] pt-2.5">
-                      <span className="text-[#6E5A4F]">Date:</span>
-                      <span className="text-[#3D271B] font-mono font-bold">{dateStr}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs sm:text-sm font-semibold">
-                      <span className="text-[#6E5A4F]">Final Amount:</span>
-                      <span className="text-[#a65827] font-mono text-base sm:text-lg font-black">₹{displayPrice(bill.finalAmount)}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-[#FAF6F0] pt-3.5 gap-2">
-                    <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border uppercase tracking-wider ${getStatusStyle(bill.status)}`}>
-                      {bill.status}
-                    </span>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onViewDetails(bill)}
-                        className="p-2.5 text-[#a65827] hover:text-[#3D271B] bg-[#FAF6F0] hover:bg-[#FAF0E6] rounded-xl transition cursor-pointer"
-                        title="View Details"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button
-                        onClick={() => handlePreview(bill)}
-                        className="p-2.5 text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
-                        title="Preview Invoice PDF"
-                      >
-                        <FileText size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDownloadPdf(bill)}
-                        disabled={downloadingId === bill._id}
-                        className="p-2.5 text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition cursor-pointer disabled:opacity-50"
-                        title="Download PDF Invoice"
-                      >
-                        <Download size={16} />
-                      </button>
-                    </div>
-                  </div>
+                  RawBT + USB
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Desktop Table View */}
-          <div className="bg-white rounded-3xl border border-[#E6CCB2]/30 shadow-xs overflow-hidden hidden lg:block">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1050px] text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#FAF6F0]/60 border-b border-[#E6CCB2]/30 text-xs sm:text-sm font-bold uppercase tracking-wider text-[#6E5A4F]">
-                    <th className="px-6 py-4.5">Invoice Info</th>
-                    <th className="px-6 py-4.5">Customer Details</th>
-                    <th className="px-6 py-4.5">Bill Type</th>
-                    <th className="px-6 py-4.5 font-mono text-right">Amount Details</th>
-                    <th className="px-6 py-4.5 text-center">Status</th>
-                    <th className="px-6 py-4.5 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#FAF6F0] text-sm sm:text-base font-semibold text-[#3D271B]">
-                  {bills.map((bill) => (
-                    <tr key={bill._id} className="hover:bg-[#FAF6F0]/20 transition-colors">
-                      <td className="px-6 py-4.5">
-                        <div className="font-black text-[#a65827] select-all font-mono text-sm sm:text-base">
-                          {bill.invoiceNumber || bill._id.substring(18)}
+                <div
+                  style={{
+                    fontSize:
+                      "12px",
+                    color:
+                      "#6b7280",
+                  }}
+                >
+                  Android → USB OTG
+                  → RP3230ABW
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={
+                handleRawBTTestPrint
+              }
+              disabled={
+                testPrinting
+              }
+              style={{
+                border: "none",
+                background:
+                  "#111827",
+                color: "#fff",
+                padding:
+                  "9px 14px",
+                borderRadius:
+                  "7px",
+                cursor:
+                  testPrinting
+                    ? "not-allowed"
+                    : "pointer",
+                display:
+                  "flex",
+                alignItems:
+                  "center",
+                gap: "7px",
+              }}
+            >
+              <Printer
+                size={16}
+              />
+
+              {testPrinting
+                ? "Printing..."
+                : "Test Print"}
+            </button>
+          </>
+        ) : (
+          <>
+            {/* DESKTOP QZ */}
+
+            <div
+              style={{
+                display:
+                  "flex",
+                alignItems:
+                  "center",
+                gap: "10px",
+              }}
+            >
+              <div
+                style={{
+                  width: "38px",
+                  height: "38px",
+                  borderRadius:
+                    "8px",
+                  background:
+                    qzConnected
+                      ? "#dcfce7"
+                      : "#fee2e2",
+                  display:
+                    "flex",
+                  alignItems:
+                    "center",
+                  justifyContent:
+                    "center",
+                }}
+              >
+                {qzConnected ? (
+                  <Wifi
+                    size={20}
+                    color="#16a34a"
+                  />
+                ) : (
+                  <WifiOff
+                    size={20}
+                    color="#dc2626"
+                  />
+                )}
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    fontSize:
+                      "14px",
+                  }}
+                >
+                  {qzConnected
+                    ? "QZ Tray Connected"
+                    : "QZ Tray Disconnected"}
+                </div>
+
+                <div
+                  style={{
+                    fontSize:
+                      "12px",
+                    color:
+                      "#6b7280",
+                  }}
+                >
+                  {connectedPrinter ||
+                    selectedPrinter ||
+                    "No printer selected"}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display:
+                  "flex",
+                gap: "8px",
+                flexWrap:
+                  "wrap",
+              }}
+            >
+              <button
+                type="button"
+                onClick={
+                  openPrinterModal
+                }
+                style={{
+                  border:
+                    "1px solid #d1d5db",
+                  background:
+                    "#fff",
+                  padding:
+                    "9px 14px",
+                  borderRadius:
+                    "7px",
+                  cursor:
+                    "pointer",
+                  display:
+                    "flex",
+                  alignItems:
+                    "center",
+                  gap: "7px",
+                }}
+              >
+                <Printer
+                  size={16}
+                />
+
+                Select Printer
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  handleQZTestPrint
+                }
+                disabled={
+                  testPrinting
+                }
+                style={{
+                  border: "none",
+                  background:
+                    "#111827",
+                  color: "#fff",
+                  padding:
+                    "9px 14px",
+                  borderRadius:
+                    "7px",
+                  cursor:
+                    testPrinting
+                      ? "not-allowed"
+                      : "pointer",
+                  display:
+                    "flex",
+                  alignItems:
+                    "center",
+                  gap: "7px",
+                }}
+              >
+                <Printer
+                  size={16}
+                />
+
+                {testPrinting
+                  ? "Printing..."
+                  : "Test Print"}
+              </button>
+
+              {qzConnected && (
+                <button
+                  type="button"
+                  onClick={
+                    disconnectQZ
+                  }
+                  style={{
+                    border:
+                      "1px solid #fecaca",
+                    background:
+                      "#fff",
+                    color:
+                      "#dc2626",
+                    padding:
+                      "9px 14px",
+                    borderRadius:
+                      "7px",
+                    cursor:
+                      "pointer",
+                    display:
+                      "flex",
+                    alignItems:
+                      "center",
+                    gap: "7px",
+                  }}
+                >
+                  <WifiOff
+                    size={16}
+                  />
+
+                  Disconnect
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ERROR */}
+
+      {printerError && (
+        <div
+          style={{
+            marginBottom: "16px",
+            padding:
+              "10px 14px",
+            background:
+              "#fef2f2",
+            border:
+              "1px solid #fecaca",
+            color: "#991b1b",
+            borderRadius:
+              "8px",
+            fontSize: "13px",
+          }}
+        >
+          {printerError}
+        </div>
+      )}
+
+      {/* =====================================================
+          DESKTOP TABLE
+      ====================================================== */}
+
+      <div
+        className="billing-desktop-table"
+        style={{
+          background: "#fff",
+          borderRadius: "12px",
+          border:
+            "1px solid #e5e7eb",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            overflowX: "auto",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              borderCollapse:
+                "collapse",
+            }}
+          >
+            <thead>
+              <tr
+                style={{
+                  background:
+                    "#f9fafb",
+                  borderBottom:
+                    "1px solid #e5e7eb",
+                }}
+              >
+                <th
+                  style={{
+                    padding:
+                      "14px 16px",
+                    textAlign:
+                      "left",
+                    fontSize:
+                      "13px",
+                  }}
+                >
+                  Invoice
+                </th>
+
+                <th
+                  style={{
+                    padding:
+                      "14px 16px",
+                    textAlign:
+                      "left",
+                    fontSize:
+                      "13px",
+                  }}
+                >
+                  Customer
+                </th>
+
+                <th
+                  style={{
+                    padding:
+                      "14px 16px",
+                    textAlign:
+                      "left",
+                    fontSize:
+                      "13px",
+                  }}
+                >
+                  Date
+                </th>
+
+                <th
+                  style={{
+                    padding:
+                      "14px 16px",
+                    textAlign:
+                      "right",
+                    fontSize:
+                      "13px",
+                  }}
+                >
+                  Amount
+                </th>
+
+                <th
+                  style={{
+                    padding:
+                      "14px 16px",
+                    textAlign:
+                      "center",
+                    fontSize:
+                      "13px",
+                  }}
+                >
+                  Status
+                </th>
+
+                <th
+                  style={{
+                    padding:
+                      "14px 16px",
+                    textAlign:
+                      "center",
+                    fontSize:
+                      "13px",
+                  }}
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {bills.map(
+                (bill) => {
+                  const statusStyle =
+                    getStatusStyle(
+                      bill.status
+                    );
+
+                  return (
+                    <tr
+                      key={
+                        bill._id
+                      }
+                      style={{
+                        borderBottom:
+                          "1px solid #f3f4f6",
+                      }}
+                    >
+                      <td
+                        style={{
+                          padding:
+                            "14px 16px",
+                          fontWeight:
+                            600,
+                        }}
+                      >
+                        {bill.invoiceNumber ||
+                          bill._id ||
+                          "-"}
+                      </td>
+
+                      <td
+                        style={{
+                          padding:
+                            "14px 16px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontWeight:
+                              500,
+                          }}
+                        >
+                          {bill.customerName ||
+                            "-"}
                         </div>
-                        <div className="text-xs text-[#6E5A4F] font-medium mt-1 flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-[#a65827]" />
-                          {bill.generatedAt
-                            ? new Date(bill.generatedAt).toLocaleDateString()
-                            : new Date(bill.createdAt).toLocaleDateString()}
+
+                        {bill.mobile && (
+                          <div
+                            style={{
+                              fontSize:
+                                "12px",
+                              color:
+                                "#6b7280",
+                              marginTop:
+                                "3px",
+                            }}
+                          >
+                            {
+                              bill.mobile
+                            }
+                          </div>
+                        )}
+                      </td>
+
+                      <td
+                        style={{
+                          padding:
+                            "14px 16px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display:
+                              "flex",
+                            alignItems:
+                              "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <Calendar
+                            size={15}
+                          />
+
+                          {bill.createdAt
+                            ? new Date(
+                                bill.createdAt
+                              ).toLocaleDateString(
+                                "en-IN"
+                              )
+                            : "-"}
                         </div>
                       </td>
 
-                      <td className="px-6 py-4.5">
-                        <div className="font-bold text-base text-[#3D271B]">{bill.customerName}</div>
-                        <div className="text-xs sm:text-sm text-[#6E5A4F] font-mono mt-0.5">
-                          {bill.mobile || "No Mobile"}
-                        </div>
+                      <td
+                        style={{
+                          padding:
+                            "14px 16px",
+                          textAlign:
+                            "right",
+                          fontWeight:
+                            600,
+                        }}
+                      >
+                        {displayPrice(
+                          bill.finalAmount ??
+                            bill.grandTotal ??
+                            0
+                        )}
                       </td>
 
-                      <td className="px-6 py-4.5">
-                        <span className="inline-flex px-3 py-1 bg-[#FAF6F0] border border-[#E6CCB2]/30 rounded-xl text-xs text-[#6E5A4F] font-bold uppercase">
-                          {bill.billType}
+                      <td
+                        style={{
+                          padding:
+                            "14px 16px",
+                          textAlign:
+                            "center",
+                        }}
+                      >
+                        <span
+                          style={{
+                            ...statusStyle,
+                            padding:
+                              "5px 9px",
+                            borderRadius:
+                              "999px",
+                            fontSize:
+                              "12px",
+                            fontWeight:
+                              600,
+                          }}
+                        >
+                          {bill.status ||
+                            "Paid"}
                         </span>
                       </td>
 
-                      <td className="px-6 py-4.5 text-right">
-                        <div className="font-black text-[#3D271B] font-mono text-base sm:text-lg">
-                          ₹{displayPrice(bill.finalAmount)}
-                        </div>
-                        <div className="text-xs text-[#6E5A4F] mt-0.5 font-mono">
-                          Subtotal: ₹{displayPrice(bill.subTotal)} | Disc: ₹{displayPrice(bill.discountAmount)}
-                        </div>
-                      </td>
+                      <td
+                        style={{
+                          padding:
+                            "14px 16px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display:
+                              "flex",
+                            justifyContent:
+                              "center",
+                            gap: "7px",
+                          }}
+                        >
+                          {/* VIEW */}
 
-                      <td className="px-6 py-4.5">
-                        <div className="flex justify-center">
-                          <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold border uppercase tracking-wider ${getStatusStyle(bill.status)}`}>
-                            {bill.status}
-                          </span>
-                        </div>
-                      </td>
+                          <button
+                            type="button"
+                            title="View"
+                            onClick={() =>
+                              onViewDetails?.(
+                                bill
+                              )
+                            }
+                            style={{
+                              border:
+                                "1px solid #d1d5db",
+                              background:
+                                "#fff",
+                              width:
+                                "34px",
+                              height:
+                                "34px",
+                              borderRadius:
+                                "7px",
+                              cursor:
+                                "pointer",
+                              display:
+                                "flex",
+                              alignItems:
+                                "center",
+                              justifyContent:
+                                "center",
+                            }}
+                          >
+                            <Eye
+                              size={16}
+                            />
+                          </button>
 
-                      <td className="px-6 py-4.5 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                          {/* DOWNLOAD */}
+
                           <button
-                            onClick={() => onViewDetails(bill)}
-                            className="p-2.5 text-[#a65827] hover:text-[#3D271B] hover:bg-[#FAF6F0] rounded-xl transition cursor-pointer"
-                            title="View Receipt Details"
+                            type="button"
+                            title="Download PDF"
+                            onClick={() =>
+                              handleDownloadPdf(
+                                bill
+                              )
+                            }
+                            disabled={
+                              downloadingId ===
+                              bill._id
+                            }
+                            style={{
+                              border:
+                                "1px solid #d1d5db",
+                              background:
+                                "#fff",
+                              width:
+                                "34px",
+                              height:
+                                "34px",
+                              borderRadius:
+                                "7px",
+                              cursor:
+                                "pointer",
+                              display:
+                                "flex",
+                              alignItems:
+                                "center",
+                              justifyContent:
+                                "center",
+                            }}
                           >
-                            <Eye className="w-5 h-5" />
+                            {downloadingId ===
+                            bill._id ? (
+                              <RefreshCw
+                                size={
+                                  16
+                                }
+                                className="spin"
+                              />
+                            ) : (
+                              <Download
+                                size={
+                                  16
+                                }
+                              />
+                            )}
                           </button>
+
+                          {/* PRINT */}
+
                           <button
-                            onClick={() => handlePreview(bill)}
-                            className="p-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                            title="Preview Invoice PDF"
+                            type="button"
+                            title={
+                              isAndroid
+                                ? "Print using RawBT"
+                                : "Print using QZ Tray"
+                            }
+                            onClick={() =>
+                              handlePrint(
+                                bill
+                              )
+                            }
+                            disabled={
+                              printingId ===
+                              bill._id
+                            }
+                            style={{
+                              border:
+                                "none",
+                              background:
+                                "#111827",
+                              color:
+                                "#fff",
+                              width:
+                                "34px",
+                              height:
+                                "34px",
+                              borderRadius:
+                                "7px",
+                              cursor:
+                                "pointer",
+                              display:
+                                "flex",
+                              alignItems:
+                                "center",
+                              justifyContent:
+                                "center",
+                            }}
                           >
-                            <FileText className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDownloadPdf(bill)}
-                            disabled={downloadingId === bill._id}
-                            className="p-2.5 text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 rounded-xl transition cursor-pointer disabled:opacity-50"
-                            title="Download PDF Invoice"
-                          >
-                            <Download className="w-5 h-5" />
+                            {printingId ===
+                            bill._id ? (
+                              <RefreshCw
+                                size={
+                                  16
+                                }
+                                className="spin"
+                              />
+                            ) : (
+                              <Printer
+                                size={
+                                  16
+                                }
+                              />
+                            )}
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
+                  );
+                }
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      {/* Pagination */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="px-6 py-4.5 bg-white border border-[#E6CCB2]/30 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-          <span className="text-sm text-[#6E5A4F] font-bold">
-            Showing Page {pagination.page} of {pagination.totalPages}
-          </span>
-          <div className="flex items-center gap-2">
+      {/* =====================================================
+          MOBILE CARDS
+      ====================================================== */}
+
+      <div
+        className="billing-mobile-cards"
+        style={{
+          display: "none",
+        }}
+      >
+        {bills.map(
+          (bill) => {
+            const statusStyle =
+              getStatusStyle(
+                bill.status
+              );
+
+            return (
+              <div
+                key={
+                  bill._id
+                }
+                style={{
+                  background:
+                    "#fff",
+                  border:
+                    "1px solid #e5e7eb",
+                  borderRadius:
+                    "12px",
+                  padding:
+                    "14px",
+                  marginBottom:
+                    "12px",
+                }}
+              >
+                <div
+                  style={{
+                    display:
+                      "flex",
+                    justifyContent:
+                      "space-between",
+                    gap: "10px",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontWeight:
+                          700,
+                      }}
+                    >
+                      {bill.invoiceNumber ||
+                        bill._id}
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize:
+                          "13px",
+                        color:
+                          "#6b7280",
+                        marginTop:
+                          "4px",
+                      }}
+                    >
+                      {bill.customerName ||
+                        "-"}
+                    </div>
+                  </div>
+
+                  <span
+                    style={{
+                      ...statusStyle,
+                      padding:
+                        "5px 9px",
+                      borderRadius:
+                        "999px",
+                      fontSize:
+                        "11px",
+                      fontWeight:
+                        600,
+                      height:
+                        "fit-content",
+                    }}
+                  >
+                    {bill.status ||
+                      "Paid"}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display:
+                      "flex",
+                    justifyContent:
+                      "space-between",
+                    marginTop:
+                      "12px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize:
+                        "13px",
+                      color:
+                        "#6b7280",
+                    }}
+                  >
+                    {bill.createdAt
+                      ? new Date(
+                          bill.createdAt
+                        ).toLocaleDateString(
+                          "en-IN"
+                        )
+                      : "-"}
+                  </span>
+
+                  <strong>
+                    {displayPrice(
+                      bill.finalAmount ??
+                        bill.grandTotal ??
+                        0
+                    )}
+                  </strong>
+                </div>
+
+                <div
+                  style={{
+                    display:
+                      "flex",
+                    gap: "7px",
+                    marginTop:
+                      "14px",
+                  }}
+                >
+                  {/* VIEW */}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onViewDetails?.(
+                        bill
+                      )
+                    }
+                    style={{
+                      flex: 1,
+                      border:
+                        "1px solid #d1d5db",
+                      background:
+                        "#fff",
+                      padding:
+                        "9px",
+                      borderRadius:
+                        "7px",
+                    }}
+                  >
+                    <Eye
+                      size={15}
+                      style={{
+                        verticalAlign:
+                          "middle",
+                        marginRight:
+                          "4px",
+                      }}
+                    />
+
+                    View
+                  </button>
+
+                  {/* PDF */}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleDownloadPdf(
+                        bill
+                      )
+                    }
+                    style={{
+                      flex: 1,
+                      border:
+                        "1px solid #d1d5db",
+                      background:
+                        "#fff",
+                      padding:
+                        "9px",
+                      borderRadius:
+                        "7px",
+                    }}
+                  >
+                    <Download
+                      size={15}
+                      style={{
+                        verticalAlign:
+                          "middle",
+                        marginRight:
+                          "4px",
+                      }}
+                    />
+
+                    PDF
+                  </button>
+
+                  {/* PRINT */}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handlePrint(
+                        bill
+                      )
+                    }
+                    style={{
+                      flex: 1,
+                      border:
+                        "none",
+                      background:
+                        "#111827",
+                      color:
+                        "#fff",
+                      padding:
+                        "9px",
+                      borderRadius:
+                        "7px",
+                    }}
+                  >
+                    <Printer
+                      size={15}
+                      style={{
+                        verticalAlign:
+                          "middle",
+                        marginRight:
+                          "4px",
+                      }}
+                    />
+
+                    Print
+                  </button>
+                </div>
+              </div>
+            );
+          }
+        )}
+      </div>
+
+      {/* =====================================================
+          PAGINATION
+      ====================================================== */}
+
+      {pagination && (
+        <div
+          style={{
+            marginTop:
+              "16px",
+            display:
+              "flex",
+            justifyContent:
+              "space-between",
+            alignItems:
+              "center",
+            gap: "10px",
+            flexWrap:
+              "wrap",
+          }}
+        >
+          <div
+            style={{
+              fontSize:
+                "13px",
+              color:
+                "#6b7280",
+            }}
+          >
+            Page{" "}
+            {pagination.page ||
+              1}{" "}
+            of{" "}
+            {pagination.totalPages ||
+              1}
+          </div>
+
+          <div
+            style={{
+              display:
+                "flex",
+              gap: "7px",
+            }}
+          >
             <button
-              onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              disabled={pagination.page <= 1}
-              className="px-4 py-2 text-sm font-bold border border-[#E6CCB2]/40 rounded-xl bg-white text-[#3D271B] hover:bg-[#FAF6F0] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
+              type="button"
+              disabled={
+                !pagination.hasPrevPage
+              }
+              onClick={() =>
+                setPage?.(
+                  Math.max(
+                    1,
+                    (pagination.page ||
+                      1) - 1
+                  )
+                )
+              }
+              style={{
+                padding:
+                  "8px 13px",
+                border:
+                  "1px solid #d1d5db",
+                background:
+                  "#fff",
+                borderRadius:
+                  "7px",
+                cursor:
+                  pagination.hasPrevPage
+                    ? "pointer"
+                    : "not-allowed",
+              }}
             >
               Previous
             </button>
+
             <button
-              onClick={() => setPage((p) => Math.min(p + 1, pagination.totalPages))}
-              disabled={pagination.page >= pagination.totalPages}
-              className="px-4 py-2 text-sm font-bold border border-[#E6CCB2]/40 rounded-xl bg-white text-[#3D271B] hover:bg-[#FAF6F0] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition"
+              type="button"
+              disabled={
+                !pagination.hasNextPage
+              }
+              onClick={() =>
+                setPage?.(
+                  (pagination.page ||
+                    1) + 1
+                )
+              }
+              style={{
+                padding:
+                  "8px 13px",
+                border:
+                  "1px solid #d1d5db",
+                background:
+                  "#fff",
+                borderRadius:
+                  "7px",
+                cursor:
+                  pagination.hasNextPage
+                    ? "pointer"
+                    : "not-allowed",
+              }}
             >
               Next
             </button>
@@ -298,49 +2571,301 @@ export default function BillingTable({
         </div>
       )}
 
-      {/* Invoice PDF Preview Modal */}
-      {previewBill && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-4xl h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-[#E6CCB2]/40">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E6CCB2]/30 bg-[#FAF6F0]/60">
-              <div>
-                <h3 className="font-extrabold text-[#3D271B] text-base sm:text-lg">Invoice Preview</h3>
-                <p className="text-xs sm:text-sm text-[#6E5A4F] font-mono mt-0.5">
-                  {previewBill.invoiceNumber || `Invoice_${previewBill._id}`}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => handleDownloadPdf(previewBill)}
-                  disabled={downloadingId === previewBill._id}
-                  className="px-4 py-2 text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5 font-bold text-sm"
-                  title="Download PDF"
-                >
-                  <Download size={16} />
-                  <span>Download</span>
-                </button>
-                <button
-                  onClick={closePreview}
-                  className="p-2 text-[#3D271B] hover:bg-[#FAF6F0] rounded-xl transition cursor-pointer"
-                  title="Close"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
+      {/* =====================================================
+          DESKTOP PRINTER MODAL
+      ====================================================== */}
 
-            {/* PDF Viewer Body */}
-            <div className="flex-1 bg-[#525659]">
-              <iframe
-                src={previewBill.invoiceUrl}
-                title="Invoice Preview"
-                className="w-full h-full border-0"
-              />
+      {showPrinterModal &&
+        !isAndroid && (
+          <div
+            style={{
+              position:
+                "fixed",
+              inset: 0,
+              background:
+                "rgba(0,0,0,0.5)",
+              display:
+                "flex",
+              alignItems:
+                "center",
+              justifyContent:
+                "center",
+              zIndex: 9998,
+              padding:
+                "20px",
+            }}
+          >
+            <div
+              style={{
+                width: "100%",
+                maxWidth:
+                  "500px",
+                background:
+                  "#fff",
+                borderRadius:
+                  "14px",
+                padding:
+                  "20px",
+                boxShadow:
+                  "0 20px 50px rgba(0,0,0,0.2)",
+              }}
+            >
+              {/* HEADER */}
+
+              <div
+                style={{
+                  display:
+                    "flex",
+                  alignItems:
+                    "center",
+                  justifyContent:
+                    "space-between",
+                  marginBottom:
+                    "18px",
+                }}
+              >
+                <div>
+                  <h3
+                    style={{
+                      margin: 0,
+                    }}
+                  >
+                    Select Printer
+                  </h3>
+
+                  <p
+                    style={{
+                      margin:
+                        "5px 0 0",
+                      fontSize:
+                        "13px",
+                      color:
+                        "#6b7280",
+                    }}
+                  >
+                    Select your thermal
+                    printer
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowPrinterModal(
+                      false
+                    )
+                  }
+                  style={{
+                    border:
+                      "none",
+                    background:
+                      "transparent",
+                    cursor:
+                      "pointer",
+                  }}
+                >
+                  <X
+                    size={20}
+                  />
+                </button>
+              </div>
+
+              {/* REFRESH */}
+
+              <button
+                type="button"
+                onClick={
+                  searchPrinters
+                }
+                disabled={
+                  printerLoading
+                }
+                style={{
+                  width: "100%",
+                  border:
+                    "1px solid #d1d5db",
+                  background:
+                    "#fff",
+                  padding:
+                    "10px",
+                  borderRadius:
+                    "8px",
+                  marginBottom:
+                    "12px",
+                  cursor:
+                    "pointer",
+                  display:
+                    "flex",
+                  alignItems:
+                    "center",
+                  justifyContent:
+                    "center",
+                  gap: "8px",
+                }}
+              >
+                <RefreshCw
+                  size={16}
+                  className={
+                    printerLoading
+                      ? "spin"
+                      : ""
+                  }
+                />
+
+                {printerLoading
+                  ? "Searching..."
+                  : "Refresh Printers"}
+              </button>
+
+              {/* PRINTER LIST */}
+
+              {printers.length ===
+              0 ? (
+                <div
+                  style={{
+                    padding:
+                      "25px",
+                    textAlign:
+                      "center",
+                    background:
+                      "#f9fafb",
+                    borderRadius:
+                      "8px",
+                    color:
+                      "#6b7280",
+                    fontSize:
+                      "13px",
+                  }}
+                >
+                  No printers
+                  found.
+
+                  <br />
+
+                  Make sure printer
+                  is installed on
+                  this computer.
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display:
+                      "flex",
+                    flexDirection:
+                      "column",
+                    gap: "8px",
+                    maxHeight:
+                      "300px",
+                    overflowY:
+                      "auto",
+                  }}
+                >
+                  {printers.map(
+                    (printer) => (
+                      <button
+                        key={
+                          printer
+                        }
+                        type="button"
+                        onClick={() =>
+                          handleConnectPrinter(
+                            printer
+                          )
+                        }
+                        disabled={
+                          printerConnecting
+                        }
+                        style={{
+                          textAlign:
+                            "left",
+                          padding:
+                            "12px",
+                          border:
+                            selectedPrinter ===
+                            printer
+                              ? "2px solid #111827"
+                              : "1px solid #e5e7eb",
+                          background:
+                            selectedPrinter ===
+                            printer
+                              ? "#f9fafb"
+                              : "#fff",
+                          borderRadius:
+                            "8px",
+                          cursor:
+                            "pointer",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display:
+                              "flex",
+                            alignItems:
+                              "center",
+                            gap: "10px",
+                          }}
+                        >
+                          <Printer
+                            size={18}
+                          />
+
+                          <span
+                            style={{
+                              fontWeight:
+                                500,
+                            }}
+                          >
+                            {printer}
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  )}
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+      {/* =====================================================
+          RESPONSIVE CSS
+      ====================================================== */}
+
+      <style>
+        {`
+          @media (max-width: 768px) {
+
+            .billing-desktop-table {
+              display: none !important;
+            }
+
+            .billing-mobile-cards {
+              display: block !important;
+            }
+
+          }
+
+          .spin {
+            animation:
+              billingSpin
+              1s linear infinite;
+          }
+
+          @keyframes billingSpin {
+
+            from {
+              transform:
+                rotate(0deg);
+            }
+
+            to {
+              transform:
+                rotate(360deg);
+            }
+
+          }
+        `}
+      </style>
     </div>
   );
 }
